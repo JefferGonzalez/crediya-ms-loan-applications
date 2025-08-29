@@ -1,0 +1,17 @@
+spring:
+  r2dbc:
+    url: jdbc:postgresql://${R2DBC_HOST}:${R2DBC_PORT}/${R2DBC_DATABASE}
+    username: ${R2DBC_USERNAME}
+    password: ${R2DBC_PASSWORD}
+    properties:
+      schema: ${R2DBC_SCHEMA}
+
+  flyway:
+    url: jdbc:postgresql://${R2DBC_HOST}:${R2DBC_PORT}/${R2DBC_DATABASE}
+    user: ${R2DBC_USERNAME}
+    password: ${R2DBC_PASSWORD}
+    default-schema: ${R2DBC_SCHEMA}
+
+logging:
+  level:
+    root: WARN

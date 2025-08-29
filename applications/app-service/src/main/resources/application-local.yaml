@@ -1,0 +1,32 @@
+spring:
+  r2dbc:
+    url: r2dbc:postgresql://${R2DBC_HOST}:${R2DBC_PORT}/${R2DBC_DATABASE}
+    username: ${R2DBC_USERNAME}
+    password: ${R2DBC_PASSWORD}
+    properties:
+      schema: ${R2DBC_SCHEMA}
+
+  flyway:
+    url: jdbc:postgresql://${R2DBC_HOST}:${R2DBC_PORT}/${R2DBC_DATABASE}
+    user: ${R2DBC_USERNAME}
+    password: ${R2DBC_PASSWORD}
+    default-schema: ${R2DBC_SCHEMA}
+    locations: classpath:db/migration
+    enabled: true
+
+adapters:
+  r2dbc:
+    host: ${R2DBC_HOST}
+    port: ${R2DBC_PORT}
+    database: ${R2DBC_DATABASE}
+    schema: ${R2DBC_SCHEMA}
+    username: ${R2DBC_USERNAME}
+    password: ${R2DBC_PASSWORD}
+
+logging:
+  level:
+    org.springframework.r2dbc.core.DefaultDatabaseClient: DEBUG
+    org.springframework.transaction.interceptor: DEBUG
+    org.springframework.transaction.reactive: DEBUG
+    org.springframework.transaction: DEBUG
+    io.r2dbc.h2: DEBUG
