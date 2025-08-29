@@ -1,0 +1,39 @@
+package co.com.pragma.crediya.api;
+
+import co.com.pragma.crediya.api.dto.SaveLoanApplicationRequest;
+import co.com.pragma.crediya.api.exceptions.EmptyRequestBodyException;
+import co.com.pragma.crediya.api.mapper.LoanApplicationRestMapper;
+import co.com.pragma.crediya.api.validator.ReactiveValidator;
+import co.com.pragma.crediya.usecase.loan.ApplicationUseCase;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Mono;
+
+@Component
+@RequiredArgsConstructor
+public class LoanApplicationHandler {
+
+    private final ApplicationUseCase applicationUseCase;
+
+    private final LoanApplicationRestMapper loanApplicationMapper;
+
+    private final ReactiveValidator reactiveValidator;
+
+    public Mono<ServerResponse> createLoanApplication(ServerRequest request) {
+        return request.bodyToMono(SaveLoanApplicationRequest.class)
+                .switchIfEmpty(Mono.error(new EmptyRequestBodyException()))
+                .flatMap(reactiveValidator::validate)
+                .map(loanApplicationMapper::toDomain)
+                .flatMap(applicationUseCase::save)
+                .map(loanApplicationMapper::toResponse)
+                .flatMap(storedLoanApplication ->
+                        ServerResponse.status(HttpStatus.CREATED)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(storedLoanApplication)
+                );
+    }
+}
