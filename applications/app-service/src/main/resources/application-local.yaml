@@ -27,6 +27,11 @@ adapters:
     timeout: 5000
     url: ${AUTH_MICROSERVICE_URL}
 
+application:
+  security:
+    jwt:
+      expiration: 7200000
+      secret-key: ${JWT_SECRET_KEY}
 
 logging:
   level:

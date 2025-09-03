@@ -1,4 +1,4 @@
-package co.com.pragma.crediya.api.config;
+package co.com.pragma.crediya.api.config.security;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;

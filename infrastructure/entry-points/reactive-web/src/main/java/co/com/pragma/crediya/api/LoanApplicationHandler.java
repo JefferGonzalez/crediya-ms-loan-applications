@@ -1,9 +1,12 @@
 package co.com.pragma.crediya.api;
 
+import co.com.pragma.crediya.api.config.security.SecurityUtils;
 import co.com.pragma.crediya.api.dto.SaveLoanApplicationRequest;
 import co.com.pragma.crediya.api.exceptions.EmptyRequestBodyException;
 import co.com.pragma.crediya.api.mapper.LoanApplicationRestMapper;
 import co.com.pragma.crediya.api.validator.ReactiveValidator;
+import co.com.pragma.crediya.model.jwt.Jwt;
+import co.com.pragma.crediya.model.loan.Application;
 import co.com.pragma.crediya.usecase.loan.ApplicationUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,12 +26,20 @@ public class LoanApplicationHandler {
 
     private final ReactiveValidator reactiveValidator;
 
+    private final SecurityUtils securityUtils;
+
     public Mono<ServerResponse> createLoanApplication(ServerRequest request) {
         return request.bodyToMono(SaveLoanApplicationRequest.class)
                 .switchIfEmpty(Mono.error(new EmptyRequestBodyException()))
                 .flatMap(reactiveValidator::validate)
                 .map(loanApplicationMapper::toDomain)
-                .flatMap(applicationUseCase::save)
+                .zipWith(securityUtils.getJwt())
+                .flatMap(tuple -> {
+                    Application application = tuple.getT1();
+                    Jwt token = tuple.getT2();
+
+                    return applicationUseCase.save(application, token);
+                })
                 .map(loanApplicationMapper::toResponse)
                 .flatMap(storedLoanApplication ->
                         ServerResponse.status(HttpStatus.CREATED)

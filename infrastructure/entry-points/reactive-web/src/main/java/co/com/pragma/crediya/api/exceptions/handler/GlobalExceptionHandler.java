@@ -1,6 +1,10 @@
-package co.com.pragma.crediya.api.exceptions;
+package co.com.pragma.crediya.api.exceptions.handler;
 
 import co.com.pragma.crediya.api.constants.HttpErrorTitles;
+import co.com.pragma.crediya.api.exceptions.EmptyRequestBodyException;
+import co.com.pragma.crediya.api.exceptions.FieldValidationError;
+import co.com.pragma.crediya.api.exceptions.JwtAuthenticationException;
+import co.com.pragma.crediya.api.exceptions.ProblemDetails;
 import co.com.pragma.crediya.model.loan.constants.ApplicationFieldNames;
 import co.com.pragma.crediya.model.loan.exceptions.ApplicationValueOutOfBoundsException;
 import co.com.pragma.crediya.model.loan.exceptions.TypeNotFoundException;
@@ -73,9 +77,12 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
             return ProblemDetails.badRequest(HttpErrorTitles.BAD_REQUEST, errors);
         }
 
+        if (ex instanceof JwtAuthenticationException) {
+            return ProblemDetails.unauthorized(HttpErrorTitles.UNAUTHORIZED, ex.getMessage());
+        }
+
         if (ex instanceof UserNotFoundException) {
-            List<FieldValidationError> errors = List.of(new FieldValidationError(ApplicationFieldNames.IDENTIFICATION_NUMBER, ex.getMessage()));
-            return ProblemDetails.notFound(HttpErrorTitles.NOT_FOUND, errors);
+            return ProblemDetails.notFound(HttpErrorTitles.NOT_FOUND, ex.getMessage());
         }
 
         if (ex instanceof UserDataInconsistencyException) {
@@ -84,11 +91,10 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
         }
 
         if (ex instanceof UserGatewayException) {
-            List<FieldValidationError> errors = List.of(new FieldValidationError("user-service-client", ex.getMessage()));
-            return ProblemDetails.internalSeverError(HttpErrorTitles.INTERNAL_SERVER_ERROR, errors);
+            return ProblemDetails.internalSeverError(HttpErrorTitles.INTERNAL_SERVER_ERROR, ex.getMessage());
         }
 
-        return new ProblemDetails(HttpErrorTitles.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR, null);
+        return new ProblemDetails(HttpErrorTitles.INTERNAL_SERVER_ERROR, "An unexpected error occurred while processing your request. Please try again later.", HttpStatus.INTERNAL_SERVER_ERROR, null);
     }
 
     private ProblemDetails handleConstraintViolation(ConstraintViolationException ex) {

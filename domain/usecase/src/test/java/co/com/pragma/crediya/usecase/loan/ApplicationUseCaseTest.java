@@ -1,6 +1,7 @@
 package co.com.pragma.crediya.usecase.loan;
 
 import co.com.pragma.crediya.model.common.constants.DomainConstants;
+import co.com.pragma.crediya.model.jwt.Jwt;
 import co.com.pragma.crediya.model.loan.Application;
 import co.com.pragma.crediya.model.loan.Status;
 import co.com.pragma.crediya.model.loan.Type;
@@ -12,7 +13,6 @@ import co.com.pragma.crediya.model.loan.gateways.TypeRepository;
 import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
 import co.com.pragma.crediya.model.transaction.gateways.TransactionalPort;
 import co.com.pragma.crediya.model.user.User;
-import co.com.pragma.crediya.model.user.gateways.UserPort;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,19 +41,17 @@ class ApplicationUseCaseTest {
 
     @Mock
     private ApplicationRepository applicationRepository;
-
-    @Mock
-    private UserPort userPort;
     @Mock
     private LoggerPort logger;
 
     @Mock
     private TransactionalPort transactionalPort;
 
+    @Mock
+    private Jwt mockJwt;
+
     @InjectMocks
     private ApplicationUseCase useCase;
-
-    private User loggedUser;
 
     private Application application;
 
@@ -66,26 +64,27 @@ class ApplicationUseCaseTest {
         when(transactionalPort.transactional(any(Mono.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        loggedUser = new User("1234567890", "jhondoe@example.com");
+        User loggedUser = new User("1234567890", "jhondoe@example.com");
 
         type = new Type(UUID.randomUUID(), DomainConstants.MICROCREDIT, BigDecimal.valueOf(300000), BigDecimal.valueOf(50000000), BigDecimal.valueOf(25.00), true);
 
         status = new Status(UUID.randomUUID(), DomainConstants.DEFAULT_PENDING_STATUS, "Application received, under evaluation");
 
         application = new Application(UUID.randomUUID(), BigDecimal.valueOf(4000000), 12, loggedUser.identificationNumber(), loggedUser.email(), type, status);
+
+        when(mockJwt.subject()).thenReturn(loggedUser.email());
+        when(mockJwt.identificationNumber()).thenReturn(loggedUser.identificationNumber());
     }
 
     @Test
     void saveApplicationSuccessfully() {
-        when(userPort.getUserByIdentificationNumber(loggedUser.identificationNumber())).thenReturn(Mono.just(loggedUser));
-
         when(typeRepository.findByName(DomainConstants.MICROCREDIT)).thenReturn(Mono.just(type));
 
         when(statusRepository.findByName(DomainConstants.DEFAULT_PENDING_STATUS)).thenReturn(Mono.just(status));
 
         when(applicationRepository.save(any(Application.class))).thenReturn(Mono.just(application));
 
-        StepVerifier.create(useCase.save(application))
+        StepVerifier.create(useCase.save(application, mockJwt))
                 .assertNext(loanApplication -> {
                     Assertions.assertNotNull(loanApplication.id());
                     Assertions.assertEquals(loanApplication.amount(), application.amount());
@@ -103,7 +102,6 @@ class ApplicationUseCaseTest {
                 })
                 .verifyComplete();
 
-        verify(userPort).getUserByIdentificationNumber(loggedUser.identificationNumber());
         verify(typeRepository).findByName(DomainConstants.MICROCREDIT);
         verify(statusRepository).findByName(DomainConstants.DEFAULT_PENDING_STATUS);
         verify(applicationRepository).save(any(Application.class));
@@ -111,25 +109,20 @@ class ApplicationUseCaseTest {
 
     @Test
     void saveApplicationFailsWhenTypeNotFound() {
-        when(userPort.getUserByIdentificationNumber(loggedUser.identificationNumber())).thenReturn(Mono.just(loggedUser));
-
         when(typeRepository.findByName(DomainConstants.MICROCREDIT)).thenReturn(Mono.empty());
 
         when(statusRepository.findByName(DomainConstants.DEFAULT_PENDING_STATUS)).thenReturn(Mono.just(status));
 
-        StepVerifier.create(useCase.save(application))
+        StepVerifier.create(useCase.save(application, mockJwt))
                 .expectError(TypeNotFoundException.class)
                 .verify();
 
-        verify(userPort).getUserByIdentificationNumber(loggedUser.identificationNumber());
         verify(typeRepository).findByName(DomainConstants.MICROCREDIT);
         verify(statusRepository).findByName(DomainConstants.DEFAULT_PENDING_STATUS);
     }
 
     @Test
     void saveApplicationFailsWhenAmountOutOfRange() {
-        when(userPort.getUserByIdentificationNumber(loggedUser.identificationNumber())).thenReturn(Mono.just(loggedUser));
-
         Type restrictedType = new Type(
                 UUID.randomUUID(),
                 DomainConstants.MICROCREDIT,
@@ -142,11 +135,10 @@ class ApplicationUseCaseTest {
 
         when(statusRepository.findByName(DomainConstants.DEFAULT_PENDING_STATUS)).thenReturn(Mono.just(status));
 
-        StepVerifier.create(useCase.save(application))
+        StepVerifier.create(useCase.save(application, mockJwt))
                 .expectError(ApplicationValueOutOfBoundsException.class)
                 .verify();
 
-        verify(userPort).getUserByIdentificationNumber(loggedUser.identificationNumber());
         verify(typeRepository).findByName(DomainConstants.MICROCREDIT);
         verify(statusRepository).findByName(DomainConstants.DEFAULT_PENDING_STATUS);
 

@@ -1,5 +1,6 @@
 package co.com.pragma.crediya.config;
 
+import co.com.pragma.crediya.model.jwt.gateways.JwtProviderPort;
 import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
 import co.com.pragma.crediya.model.loan.gateways.StatusRepository;
 import co.com.pragma.crediya.model.loan.gateways.TypeRepository;
@@ -66,6 +67,11 @@ class UseCasesConfigTest {
         @Bean
         public TransactionalPort transactionalPort() {
             return Mockito.mock(TransactionalPort.class);
+        }
+
+        @Bean
+        public JwtProviderPort jwtProvider() {
+            return Mockito.mock(JwtProviderPort.class);
         }
 
     }

@@ -1,5 +1,6 @@
 package co.com.pragma.crediya.api;
 
+import co.com.pragma.crediya.api.constants.ApiConstants;
 import co.com.pragma.crediya.api.dto.LoanApplicationResponse;
 import co.com.pragma.crediya.api.dto.SaveLoanApplicationRequest;
 import co.com.pragma.crediya.api.exceptions.ProblemDetails;
@@ -8,6 +9,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springdoc.core.annotations.RouterOperation;
 import org.springdoc.core.annotations.RouterOperations;
 import org.springframework.context.annotation.Bean;
@@ -24,7 +26,7 @@ public class RouterRest {
     @Bean
     @RouterOperations({
             @RouterOperation(
-                    path = "/api/v1/loan-applications",
+                    path = ApiConstants.LOAN_APPLICATIONS_PATH,
                     produces = {MediaType.APPLICATION_JSON_VALUE},
                     method = RequestMethod.POST,
                     beanClass = LoanApplicationHandler.class,
@@ -40,6 +42,7 @@ public class RouterRest {
                                     required = true,
                                     description = "Loan data required to create a new application"
                             ),
+                            security = @SecurityRequirement(name = "bearerAuth"),
                             responses = {
                                     @ApiResponse(
                                             responseCode = "201",
@@ -62,7 +65,7 @@ public class RouterRest {
     })
     public RouterFunction<ServerResponse> routerFunction(LoanApplicationHandler handler) {
         return RouterFunctions.route()
-                .POST("/api/v1/loan-applications", handler::createLoanApplication)
+                .POST(ApiConstants.LOAN_APPLICATIONS_PATH, handler::createLoanApplication)
                 .build();
     }
 
