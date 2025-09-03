@@ -11,6 +11,7 @@ import org.mapstruct.Mapping;
 public interface LoanApplicationRestMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "identificationNumber", ignore = true)
     @Mapping(target = "email", ignore = true)
     @Mapping(target = "status", ignore = true)
     @Mapping(source = "type", target = "type.name")

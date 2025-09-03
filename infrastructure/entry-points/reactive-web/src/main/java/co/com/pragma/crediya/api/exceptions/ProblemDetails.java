@@ -21,6 +21,9 @@ public class ProblemDetails {
     @Schema(description = "Short, human-readable title of the error", example = "Invalid Request")
     private String title;
 
+    @Schema(description = "Detailed description of the error", example = "Invalid credentials provided. Please check your email and password.")
+    private String message;
+
     @Schema(description = "HTTP status code", example = "400")
     private int status;
 
@@ -37,32 +40,42 @@ public class ProblemDetails {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime timestamp;
 
-    public ProblemDetails(String title, HttpStatus status, List<FieldValidationError> errors) {
+    public ProblemDetails(String title, String message, HttpStatus status, List<FieldValidationError> errors) {
         this.title = title;
+        this.message = message;
         this.httpStatus = status;
         this.status = status.value();
         this.errors = errors;
         this.timestamp = LocalDateTime.now();
     }
 
-    public static ProblemDetails notFound(String title, List<FieldValidationError> errors) {
-        return new ProblemDetails(title, HttpStatus.NOT_FOUND, errors);
+    public static ProblemDetails forbidden(String title, String message) {
+        return new ProblemDetails(title, message, HttpStatus.FORBIDDEN, null);
+    }
+
+    public static ProblemDetails notFound(String title, String message) {
+        return new ProblemDetails(title, message, HttpStatus.NOT_FOUND, null);
+    }
+
+    public static ProblemDetails unauthorized(String title, String message) {
+        return new ProblemDetails(title, message, HttpStatus.UNAUTHORIZED, null);
     }
 
     public static ProblemDetails badRequest(String title, List<FieldValidationError> errors) {
-        return new ProblemDetails(title, HttpStatus.BAD_REQUEST, errors);
+        return new ProblemDetails(title, null, HttpStatus.BAD_REQUEST, errors);
     }
 
     public static ProblemDetails conflict(String title, List<FieldValidationError> errors) {
-        return new ProblemDetails(title, HttpStatus.CONFLICT, errors);
+        return new ProblemDetails(title, null, HttpStatus.CONFLICT, errors);
     }
 
-    public static ProblemDetails internalSeverError(String title, List<FieldValidationError> errors) {
-        return new ProblemDetails(title, HttpStatus.INTERNAL_SERVER_ERROR, errors);
+    public static ProblemDetails internalSeverError(String title, String message) {
+        return new ProblemDetails(title, message, HttpStatus.INTERNAL_SERVER_ERROR, null);
     }
 
     @JsonIgnore
     public HttpStatus getHttpStatus() {
         return httpStatus;
     }
+
 }

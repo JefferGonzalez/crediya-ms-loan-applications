@@ -1,6 +1,8 @@
 package co.com.pragma.crediya.usecase.loan;
 
 import co.com.pragma.crediya.model.common.constants.DomainConstants;
+import co.com.pragma.crediya.model.jwt.Jwt;
+import co.com.pragma.crediya.model.jwt.gateways.JwtProviderPort;
 import co.com.pragma.crediya.model.loan.Application;
 import co.com.pragma.crediya.model.loan.Status;
 import co.com.pragma.crediya.model.loan.Type;
@@ -15,8 +17,6 @@ import co.com.pragma.crediya.model.loan.gateways.StatusRepository;
 import co.com.pragma.crediya.model.loan.gateways.TypeRepository;
 import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
 import co.com.pragma.crediya.model.transaction.gateways.TransactionalPort;
-import co.com.pragma.crediya.model.user.exceptions.UserDataInconsistencyException;
-import co.com.pragma.crediya.model.user.gateways.UserPort;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -25,27 +25,28 @@ import java.util.StringJoiner;
 public record ApplicationUseCase(TypeRepository typeRepository,
                                  StatusRepository statusRepository,
                                  ApplicationRepository applicationRepository,
-                                 UserPort userPort,
+                                 JwtProviderPort jwtProviderPort,
                                  LoggerPort logger,
                                  TransactionalPort transactionalPort) {
 
-    public Mono<Application> save(Application application) {
-        logger.info("Starting save operation for user with identification number: {}", application.identificationNumber());
+    public Mono<Application> save(Application application, Jwt token) {
+        String identificationNumber = token.identificationNumber();
+        String email = token.subject();
 
-        return userPort.getUserByIdentificationNumber(application.identificationNumber())
-                .flatMap(user -> {
-                    if (!user.identificationNumber().equals(application.identificationNumber())) {
-                        UserDataInconsistencyException ex = new UserDataInconsistencyException();
-                        logger.error("Identification number mismatch. Expected: {}, Got: {}", application.identificationNumber(), user.identificationNumber(), ex);
+        logger.info("Starting save operation for user with identification number: {}", identificationNumber);
 
-                        return Mono.error(ex);
-                    }
+        Status status = new Status(null, DomainConstants.DEFAULT_PENDING_STATUS, null);
+        Application applicationWithPendingStatusAndUserEmail = new Application(
+                null,
+                application.amount(),
+                application.term(),
+                identificationNumber,
+                email,
+                application.type(),
+                status
+        );
 
-                    Status status = new Status(null, DomainConstants.DEFAULT_PENDING_STATUS, null);
-                    Application applicationWithPendingStatusAndUserEmail = new Application(null, application.amount(), application.term(), application.identificationNumber(), user.email(), application.type(), status);
-
-                    return execute(applicationWithPendingStatusAndUserEmail);
-                });
+        return execute(applicationWithPendingStatusAndUserEmail);
     }
 
     private Mono<Application> execute(Application application) {
