@@ -1,12 +1,17 @@
 package co.com.pragma.crediya.api;
 
 import co.com.pragma.crediya.api.config.security.SecurityUtils;
+import co.com.pragma.crediya.api.dto.CustomerApplicationsReport;
+import co.com.pragma.crediya.api.dto.ReportMetadata;
 import co.com.pragma.crediya.api.dto.SaveLoanApplicationRequest;
 import co.com.pragma.crediya.api.exceptions.EmptyRequestBodyException;
+import co.com.pragma.crediya.api.mapper.LoanApplicationRestFilterMapper;
 import co.com.pragma.crediya.api.mapper.LoanApplicationRestMapper;
 import co.com.pragma.crediya.api.validator.ReactiveValidator;
 import co.com.pragma.crediya.model.jwt.Jwt;
 import co.com.pragma.crediya.model.loan.Application;
+import co.com.pragma.crediya.model.loan.report.LoanApplicationFilter;
+import co.com.pragma.crediya.usecase.loan.report.ApplicationReportUseCase;
 import co.com.pragma.crediya.usecase.loan.ApplicationUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,11 +27,36 @@ public class LoanApplicationHandler {
 
     private final ApplicationUseCase applicationUseCase;
 
+    private final ApplicationReportUseCase applicationReportUseCase;
+
     private final LoanApplicationRestMapper loanApplicationMapper;
 
     private final ReactiveValidator reactiveValidator;
 
     private final SecurityUtils securityUtils;
+
+    public Mono<ServerResponse> getReport(ServerRequest request) {
+        LoanApplicationFilter filter = LoanApplicationRestFilterMapper.fromServerRequest(request);
+
+        return applicationReportUseCase.getLoanApplicationsReport(filter)
+                .map(report -> {
+                    long totalItems = report.totalItems();
+                    long totalPages = Math.ceilDiv(totalItems, filter.limit());
+                    int currentPage = filter.page();
+                    int size = report.data().size();
+
+                    ReportMetadata metadata = new ReportMetadata(totalItems, totalPages, currentPage, size);
+                    return CustomerApplicationsReport.builder()
+                            .data(report.data())
+                            .metadata(metadata)
+                            .build();
+                })
+                .flatMap(report ->
+                        ServerResponse.ok()
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(report)
+                );
+    }
 
     public Mono<ServerResponse> createLoanApplication(ServerRequest request) {
         return request.bodyToMono(SaveLoanApplicationRequest.class)
@@ -47,4 +77,5 @@ public class LoanApplicationHandler {
                                 .bodyValue(storedLoanApplication)
                 );
     }
+
 }

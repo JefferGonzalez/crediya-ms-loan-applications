@@ -2,7 +2,6 @@ package co.com.pragma.crediya.usecase.loan;
 
 import co.com.pragma.crediya.model.common.constants.DomainConstants;
 import co.com.pragma.crediya.model.jwt.Jwt;
-import co.com.pragma.crediya.model.jwt.gateways.JwtProviderPort;
 import co.com.pragma.crediya.model.loan.Application;
 import co.com.pragma.crediya.model.loan.Status;
 import co.com.pragma.crediya.model.loan.Type;
@@ -25,7 +24,6 @@ import java.util.StringJoiner;
 public record ApplicationUseCase(TypeRepository typeRepository,
                                  StatusRepository statusRepository,
                                  ApplicationRepository applicationRepository,
-                                 JwtProviderPort jwtProviderPort,
                                  LoggerPort logger,
                                  TransactionalPort transactionalPort) {
 

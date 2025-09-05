@@ -1,10 +1,7 @@
 package co.com.pragma.crediya.api.exceptions.handler;
 
 import co.com.pragma.crediya.api.constants.HttpErrorTitles;
-import co.com.pragma.crediya.api.exceptions.EmptyRequestBodyException;
-import co.com.pragma.crediya.api.exceptions.FieldValidationError;
-import co.com.pragma.crediya.api.exceptions.JwtAuthenticationException;
-import co.com.pragma.crediya.api.exceptions.ProblemDetails;
+import co.com.pragma.crediya.api.exceptions.*;
 import co.com.pragma.crediya.model.loan.constants.ApplicationFieldNames;
 import co.com.pragma.crediya.model.loan.exceptions.ApplicationValueOutOfBoundsException;
 import co.com.pragma.crediya.model.loan.exceptions.TypeNotFoundException;
@@ -64,7 +61,11 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
         }
 
         if (ex instanceof EmptyRequestBodyException) {
-            return ProblemDetails.badRequest(ex.getMessage(), null);
+            return ProblemDetails.badRequest(HttpErrorTitles.BAD_REQUEST, ex.getMessage());
+        }
+
+        if (ex instanceof InvalidQueryParamException) {
+            return ProblemDetails.badRequest(HttpErrorTitles.BAD_REQUEST, ex.getMessage());
         }
 
         if (ex instanceof ApplicationValueOutOfBoundsException) {

@@ -6,6 +6,7 @@ import co.com.pragma.crediya.model.common.constants.DomainConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
@@ -28,7 +29,11 @@ public class SecurityConfig {
                 .authorizeExchange(exchangeSpec -> exchangeSpec
                         .pathMatchers(ApiConstants.PUBLIC_PATTERNS)
                         .permitAll()
-                        .pathMatchers(ApiConstants.PRIVATE_PATTERNS)
+                        .pathMatchers(HttpMethod.GET, ApiConstants.LOAN_APPLICATIONS_PATH)
+                        .hasAnyAuthority(
+                                DomainConstants.ADVISOR_ROLE
+                        )
+                        .pathMatchers(HttpMethod.POST, ApiConstants.LOAN_APPLICATIONS_PATH)
                         .hasAnyAuthority(
                                 DomainConstants.CUSTOMER_ROLE
                         )

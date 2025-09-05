@@ -5,14 +5,16 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserEmailResponse {
+public class UserResponse {
 
     private String email;
 
-    private String identificationNumber;
+    private BigDecimal baseSalary;
 
 }

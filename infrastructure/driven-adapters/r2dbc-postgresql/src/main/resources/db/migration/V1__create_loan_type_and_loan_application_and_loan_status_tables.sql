@@ -36,6 +36,7 @@ VALUES ('PERSONAL LOAN', 500000, 100000000, 18.50, TRUE),
 
 INSERT INTO loan_status (name, description)
 VALUES ('UNDER REVIEW', 'Application received, under evaluation'),
+       ('MANUAL REVIEW', 'Application requires manual verification by an advisor'),
        ('APPROVED', 'Loan application approved'),
        ('REJECTED', 'Loan application rejected'),
        ('CANCELLED', 'Application cancelled by the client or the system');

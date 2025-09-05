@@ -16,4 +16,5 @@ public class FieldValidationError {
 
     @Schema(description = "Validation error message for the field", example = "Email format is invalid")
     private String message;
+
 }
