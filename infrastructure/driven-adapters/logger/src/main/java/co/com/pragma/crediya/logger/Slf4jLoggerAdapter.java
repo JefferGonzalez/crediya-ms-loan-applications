@@ -1,15 +1,13 @@
 package co.com.pragma.crediya.logger;
 
 import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class Slf4jLoggerAdapter implements LoggerPort {
+public record Slf4jLoggerAdapter(Logger logger) implements LoggerPort {
 
-    private final Logger logger;
-
-    public Slf4jLoggerAdapter(Class<?> clazz) {
-        this.logger = LoggerFactory.getLogger(clazz);
+    public Slf4jLoggerAdapter(Class<?> logger) {
+        this(LoggerFactory.getLogger(logger));
     }
 
     @Override
@@ -26,4 +24,5 @@ public class Slf4jLoggerAdapter implements LoggerPort {
     public void error(String message, Object... args) {
         logger.error(message, args);
     }
+
 }

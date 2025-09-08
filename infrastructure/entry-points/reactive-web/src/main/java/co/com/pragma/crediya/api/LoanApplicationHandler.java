@@ -11,8 +11,8 @@ import co.com.pragma.crediya.api.validator.ReactiveValidator;
 import co.com.pragma.crediya.model.jwt.Jwt;
 import co.com.pragma.crediya.model.loan.Application;
 import co.com.pragma.crediya.model.loan.report.LoanApplicationFilter;
-import co.com.pragma.crediya.usecase.loan.report.ApplicationReportUseCase;
 import co.com.pragma.crediya.usecase.loan.ApplicationUseCase;
+import co.com.pragma.crediya.usecase.loan.report.ApplicationReportUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -42,8 +42,8 @@ public class LoanApplicationHandler {
                 .map(report -> {
                     long totalItems = report.totalItems();
                     long totalPages = Math.ceilDiv(totalItems, filter.limit());
-                    int currentPage = filter.page();
                     int size = report.data().size();
+                    int currentPage = size != 0 ? filter.page() : 0;
 
                     ReportMetadata metadata = new ReportMetadata(totalItems, totalPages, currentPage, size);
                     return CustomerApplicationsReport.builder()

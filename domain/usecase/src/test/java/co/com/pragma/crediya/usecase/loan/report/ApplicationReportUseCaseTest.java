@@ -11,7 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Flux;
@@ -25,6 +24,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,7 +39,6 @@ class ApplicationReportUseCaseTest {
     @Mock
     private LoggerPort logger;
 
-    @InjectMocks
     private ApplicationReportUseCase useCase;
 
     private LoanApplicationFilter paginationFilter;
@@ -65,10 +64,12 @@ class ApplicationReportUseCaseTest {
         report2 = new ApplicationReport(UUID.randomUUID(), BigDecimal.valueOf(3000), 12, email, "MICROCREDIT", BigDecimal.valueOf(2), "APPROVED");
 
         user = new User("12345", email, BigDecimal.valueOf(10000));
+
+        useCase = new ApplicationReportUseCase(applicationRepository, userPort, logger);
     }
 
     @Test
-    @DisplayName("Get loan applications report with pagination returns correct data")
+    @DisplayName("getLoanApplicationsReport() with pagination returns correct data")
     void getLoanApplicationsReport_withPagination_shouldReturnReport() {
         when(applicationRepository.findApplicationsReport(paginationFilter.limit(), paginationFilter.page()))
                 .thenReturn(Flux.just(report1));
@@ -85,12 +86,12 @@ class ApplicationReportUseCaseTest {
                     CustomerApplication app = result.data().getFirst();
                     assertThat(app.email()).isEqualTo(email);
                     assertThat(app.baseSalary()).isEqualTo(BigDecimal.valueOf(10000));
-                    assertThat(app.totalMonthlyDebt()).isGreaterThan(BigDecimal.ZERO);
+                    assertThat(app.monthlyPayment()).isGreaterThan(BigDecimal.ZERO);
                 }).verifyComplete();
     }
 
     @Test
-    @DisplayName("Get loan applications report with filters returns correct data")
+    @DisplayName("getLoanApplicationsReport() with filters returns correct data")
     void getLoanApplicationsReport_withFilters_shouldReturnReport() {
         when(applicationRepository.findApplicationsReport(filter)).thenReturn(Flux.just(report1));
 
@@ -111,7 +112,7 @@ class ApplicationReportUseCaseTest {
     }
 
     @Test
-    @DisplayName("Get loan applications report with no results returns empty list")
+    @DisplayName("getLoanApplicationsReport() with no results returns empty list")
     void getLoanApplicationsReport_whenNoResults_shouldReturnEmptyList() {
         when(applicationRepository.findApplicationsReport(any(LoanApplicationFilter.class)))
                 .thenReturn(Flux.empty());
@@ -121,13 +122,13 @@ class ApplicationReportUseCaseTest {
 
         StepVerifier.create(useCase.getLoanApplicationsReport(filter))
                 .assertNext(result -> {
-                    assertThat(result.totalItems()).isEqualTo(0);
+                    assertThat(result.totalItems()).isZero();
                     assertThat(result.data()).isEmpty();
                 }).verifyComplete();
     }
 
     @Test
-    @DisplayName("Get loan applications report returns separate entries for same email")
+    @DisplayName("getLoanApplicationsReport() returns separate entries for same email")
     void getLoanApplicationsReport_withMultipleReportsForSameEmail_shouldAggregateDebt() {
         when(applicationRepository.findApplicationsReport(filter)).thenReturn(Flux.just(report1, report2));
 
@@ -141,7 +142,53 @@ class ApplicationReportUseCaseTest {
                     assertThat(report.data()).hasSize(2);
 
                     CustomerApplication item = report.data().getFirst();
-                    assertThat(item.totalMonthlyDebt()).isGreaterThan(BigDecimal.ZERO);
+                    assertThat(item.monthlyPayment()).isGreaterThan(BigDecimal.ZERO);
                 }).verifyComplete();
     }
+
+    @Test
+    @DisplayName("getLoanApplicationsReport() handles repository errors correctly")
+    void getLoanApplicationsReport_shouldHandleRepositoryErrors() {
+        when(applicationRepository.findApplicationsReport(any(LoanApplicationFilter.class)))
+                .thenReturn(Flux.error(new RuntimeException("DB error")));
+
+        when(applicationRepository.countLoanApplications(any(LoanApplicationFilter.class)))
+                .thenReturn(Mono.error(new RuntimeException("DB error")));
+
+        StepVerifier.create(useCase.getLoanApplicationsReport(filter))
+                .expectErrorMatches(e -> e instanceof RuntimeException &&
+                        e.getMessage().equals("DB error"))
+                .verify();
+    }
+
+    @Test
+    @DisplayName("getLoanApplicationsReport() sets baseSalary to zero when userPort returns empty")
+    void getLoanApplicationsReport_shouldSetZeroBaseSalaryWhenUserNotFound() {
+        ApplicationReport report = new ApplicationReport(
+                UUID.randomUUID(),
+                BigDecimal.valueOf(10000),
+                12,
+                null,
+                "Personal",
+                BigDecimal.valueOf(5),
+                "APPROVED"
+        );
+
+        when(applicationRepository.findApplicationsReport(any(LoanApplicationFilter.class)))
+                .thenReturn(Flux.just(report));
+
+        when(applicationRepository.countLoanApplications(any(LoanApplicationFilter.class)))
+                .thenReturn(Mono.just(1L));
+
+        when(userPort.getUsersByEmails(anySet())).thenReturn(Mono.just(List.of()));
+
+        StepVerifier.create(useCase.getLoanApplicationsReport(filter))
+                .assertNext(result -> {
+                    CustomerApplication customer = result.data().getFirst();
+
+                    assertThat(customer.baseSalary()).isEqualTo(BigDecimal.ZERO);
+                })
+                .verifyComplete();
+    }
+
 }
