@@ -1,8 +1,11 @@
 package co.com.pragma.crediya.consumer;
 
+import co.com.pragma.crediya.consumer.dto.UserResponse;
 import co.com.pragma.crediya.consumer.mapper.UserExternalMapper;
 import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
 import co.com.pragma.crediya.model.user.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterAll;
@@ -13,12 +16,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +39,8 @@ class UserServiceClientTest {
 
     @Mock
     private static UserExternalMapper mapper;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeAll
     static void startMockServer() throws IOException {
@@ -54,43 +62,28 @@ class UserServiceClientTest {
     }
 
     @Test
-    void shouldReturnUserWhenApiRespondsOk() {
-        String jsonResponse = """
-                {
-                  "identificationNumber": "123456789",
-                  "email": "john@example.com"
-                }
-                """;
+    void getUsersByEmails_shouldReturnMappedUsers() throws JsonProcessingException {
+        UserResponse john = new UserResponse("john@example.com", BigDecimal.valueOf(10000));
+        UserResponse jane = new UserResponse("jane@example.com", BigDecimal.valueOf(20000));
 
         mockWebServer.enqueue(new MockResponse()
-                .setBody(jsonResponse)
+                .setBody(objectMapper.writeValueAsString(List.of(john, jane)))
                 .addHeader("Content-Type", "application/json"));
 
-        when(mapper.toDomain(any()))
+        when(mapper.toDomain(any(UserResponse.class)))
                 .thenAnswer(invocation -> {
-                    invocation.getArgument(0);
-                    return new User(
-                            "123456789",
-                            "john@example.com"
-                    );
+                    UserResponse dto = invocation.getArgument(0);
+                    return new User(null, dto.getEmail(), dto.getBaseSalary());
                 });
 
-        String userIdentificationNumber = "123456789";
-        var result = userServiceClient.getUserByIdentificationNumber(userIdentificationNumber).block();
-
-        assertThat(result).isNotNull();
-        assertThat(result.identificationNumber()).isEqualTo(userIdentificationNumber);
-        assertThat(result.email()).isEqualTo("john@example.com");
+        Set<String> emails = Set.of(john.getEmail(), jane.getEmail());
+        StepVerifier.create(userServiceClient.getUsersByEmails(emails))
+                .assertNext(users -> {
+                    assertThat(users).hasSize(2);
+                    assertThat(users.get(0).email()).isEqualTo(john.getEmail());
+                    assertThat(users.get(1).email()).isEqualTo(jane.getEmail());
+                })
+                .verifyComplete();
     }
 
-    @Test
-    void shouldHandleNotFoundGracefully() {
-        mockWebServer.enqueue(new MockResponse()
-                .setResponseCode(404)
-                .addHeader("Content-Type", "application/json"));
-
-        Mono<?> result = userServiceClient.getUserByIdentificationNumber("999");
-
-        assertThat(result.onErrorResume(e -> Mono.empty()).block()).isNull();
-    }
 }

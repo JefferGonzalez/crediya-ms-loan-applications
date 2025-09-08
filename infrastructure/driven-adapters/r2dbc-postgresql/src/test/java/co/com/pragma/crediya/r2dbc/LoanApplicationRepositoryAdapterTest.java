@@ -52,7 +52,9 @@ class LoanApplicationRepositoryAdapterTest {
     @Test
     void saveApplicationSuccessfully() {
         when(mapper.toEntity(application)).thenReturn(loanApplicationEntity);
+
         when(reactiveRepository.save(loanApplicationEntity)).thenReturn(Mono.just(loanApplicationEntity));
+
         when(mapper.toDomain(loanApplicationEntity)).thenReturn(application);
 
         StepVerifier.create(adapter.save(application))
@@ -67,6 +69,7 @@ class LoanApplicationRepositoryAdapterTest {
     @Test
     void saveApplicationPropagatesError() {
         when(mapper.toEntity(application)).thenReturn(loanApplicationEntity);
+
         when(reactiveRepository.save(loanApplicationEntity)).thenReturn(Mono.error(new RuntimeException("DB error")));
 
         StepVerifier.create(adapter.save(application))
@@ -75,7 +78,9 @@ class LoanApplicationRepositoryAdapterTest {
                 .verify();
 
         verify(mapper).toEntity(application);
+
         verify(reactiveRepository).save(loanApplicationEntity);
-        verify(mapper, never()).toDomain(any());
+
+        verify(mapper, never()).toDomain(any(LoanApplicationEntity.class));
     }
 }

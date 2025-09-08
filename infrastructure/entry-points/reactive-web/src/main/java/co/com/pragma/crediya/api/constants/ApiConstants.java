@@ -15,12 +15,14 @@ public final class ApiConstants {
             "/swagger-ui.html"
     };
 
-    public static final String[] PRIVATE_PATTERNS = {
-            LOAN_APPLICATIONS_PATH + "/**"
-    };
-
     public static final String BEARER_PREFIX = "Bearer ";
 
     public static final int BEARER_PREFIX_LENGTH = BEARER_PREFIX.length();
+
+    public static final String PARAM_DELIMITER = ",";
+
+    public static final int DEFAULT_LIMIT = 5;
+
+    public static final int DEFAULT_PAGE = 1;
 
 }

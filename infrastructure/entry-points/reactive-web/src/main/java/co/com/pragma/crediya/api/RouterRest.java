@@ -65,6 +65,7 @@ public class RouterRest {
     })
     public RouterFunction<ServerResponse> routerFunction(LoanApplicationHandler handler) {
         return RouterFunctions.route()
+                .GET(ApiConstants.LOAN_APPLICATIONS_PATH, handler::getReport)
                 .POST(ApiConstants.LOAN_APPLICATIONS_PATH, handler::createLoanApplication)
                 .build();
     }

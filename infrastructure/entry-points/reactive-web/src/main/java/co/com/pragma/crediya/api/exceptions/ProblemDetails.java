@@ -2,6 +2,7 @@ package co.com.pragma.crediya.api.exceptions;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,6 +17,7 @@ import java.util.List;
         name = "ProblemDetails",
         description = "Standardized error response body following RFC 7807 style"
 )
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProblemDetails {
 
     @Schema(description = "Short, human-readable title of the error", example = "Invalid Request")
@@ -63,6 +65,10 @@ public class ProblemDetails {
 
     public static ProblemDetails badRequest(String title, List<FieldValidationError> errors) {
         return new ProblemDetails(title, null, HttpStatus.BAD_REQUEST, errors);
+    }
+
+    public static ProblemDetails badRequest(String title, String message) {
+        return new ProblemDetails(title, message, HttpStatus.BAD_REQUEST, null);
     }
 
     public static ProblemDetails conflict(String title, List<FieldValidationError> errors) {

@@ -16,6 +16,7 @@ import co.com.pragma.crediya.model.jwt.Jwt;
 import co.com.pragma.crediya.model.jwt.gateways.JwtProviderPort;
 import co.com.pragma.crediya.model.loan.Application;
 import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
+import co.com.pragma.crediya.usecase.loan.report.ApplicationReportUseCase;
 import co.com.pragma.crediya.usecase.loan.ApplicationUseCase;
 import jakarta.validation.Validator;
 import org.assertj.core.api.Assertions;
@@ -76,6 +77,9 @@ class RouterRestTest {
 
     @MockitoBean
     private LoggerPort logger;
+
+    @MockitoBean
+    private ApplicationReportUseCase applicationReportUseCase;
 
     @MockitoBean
     private ApplicationUseCase applicationUseCase;

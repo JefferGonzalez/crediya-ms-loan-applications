@@ -11,6 +11,7 @@ import co.com.pragma.crediya.api.validator.ReactiveValidator;
 import co.com.pragma.crediya.model.common.constants.DomainConstants;
 import co.com.pragma.crediya.model.jwt.Jwt;
 import co.com.pragma.crediya.model.jwt.gateways.JwtProviderPort;
+import co.com.pragma.crediya.usecase.loan.report.ApplicationReportUseCase;
 import co.com.pragma.crediya.usecase.loan.ApplicationUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,9 @@ class ConfigTest {
 
     @MockitoBean
     private LoanApplicationRestMapper mapper;
+
+    @MockitoBean
+    private ApplicationReportUseCase applicationReportUseCase;
 
     @MockitoBean
     private ApplicationUseCase userUseCase;

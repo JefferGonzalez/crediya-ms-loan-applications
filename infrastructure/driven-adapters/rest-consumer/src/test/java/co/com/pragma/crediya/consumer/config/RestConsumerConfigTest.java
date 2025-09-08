@@ -1,5 +1,6 @@
 package co.com.pragma.crediya.consumer.config;
 
+import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -13,12 +14,14 @@ class RestConsumerConfigTest {
 
     private RestConsumerConfig restConsumerConfig;
 
+    private LoggerPort loggerPort;
+
     @BeforeEach
     void setUp() {
         properties = new RestConsumerProperties();
         ReflectionTestUtils.setField(properties, "url", "http://localhost:8080");
         ReflectionTestUtils.setField(properties, "timeout", 5000);
-        restConsumerConfig = new RestConsumerConfig(properties);
+        restConsumerConfig = new RestConsumerConfig(properties, loggerPort);
     }
 
     @Test

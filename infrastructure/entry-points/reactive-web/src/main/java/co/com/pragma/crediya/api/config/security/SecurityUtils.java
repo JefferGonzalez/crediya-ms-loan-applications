@@ -20,7 +20,7 @@ public class SecurityUtils {
                 .map(jwtProviderPort::parseToken);
     }
 
-    private static Mono<String> getCurrentToken() {
+    public Mono<String> getCurrentToken() {
         return ReactiveSecurityContextHolder.getContext()
                 .map(SecurityContext::getAuthentication)
                 .map(Authentication::getCredentials)

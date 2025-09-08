@@ -6,6 +6,7 @@ import co.com.pragma.crediya.model.loan.Application;
 import co.com.pragma.crediya.model.loan.Status;
 import co.com.pragma.crediya.model.loan.Type;
 import co.com.pragma.crediya.model.loan.exceptions.ApplicationValueOutOfBoundsException;
+import co.com.pragma.crediya.model.loan.exceptions.StatusNotFoundException;
 import co.com.pragma.crediya.model.loan.exceptions.TypeNotFoundException;
 import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
 import co.com.pragma.crediya.model.loan.gateways.StatusRepository;
@@ -26,6 +27,7 @@ import reactor.test.StepVerifier;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,7 +66,7 @@ class ApplicationUseCaseTest {
         when(transactionalPort.transactional(any(Mono.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        User loggedUser = new User("1234567890", "jhondoe@example.com");
+        User loggedUser = new User("1234567890", "jhondoe@example.com", BigDecimal.valueOf(1200000));
 
         type = new Type(UUID.randomUUID(), DomainConstants.MICROCREDIT, BigDecimal.valueOf(300000), BigDecimal.valueOf(50000000), BigDecimal.valueOf(25.00), true);
 
@@ -122,6 +124,16 @@ class ApplicationUseCaseTest {
     }
 
     @Test
+    void saveApplicationFailsWhenStatusNotFound() {
+        when(typeRepository.findByName(DomainConstants.MICROCREDIT)).thenReturn(Mono.just(type));
+        when(statusRepository.findByName(DomainConstants.DEFAULT_PENDING_STATUS)).thenReturn(Mono.empty());
+
+        StepVerifier.create(useCase.save(application, mockJwt))
+                .expectError(StatusNotFoundException.class)
+                .verify();
+    }
+
+    @Test
     void saveApplicationFailsWhenAmountOutOfRange() {
         Type restrictedType = new Type(
                 UUID.randomUUID(),
@@ -136,7 +148,11 @@ class ApplicationUseCaseTest {
         when(statusRepository.findByName(DomainConstants.DEFAULT_PENDING_STATUS)).thenReturn(Mono.just(status));
 
         StepVerifier.create(useCase.save(application, mockJwt))
-                .expectError(ApplicationValueOutOfBoundsException.class)
+                .expectErrorSatisfies(error -> {
+                    assertThat(error)
+                            .isInstanceOf(ApplicationValueOutOfBoundsException.class)
+                            .hasMessage("amount most be between 10.000.000,00 and 20.000.000,00");
+                })
                 .verify();
 
         verify(typeRepository).findByName(DomainConstants.MICROCREDIT);
