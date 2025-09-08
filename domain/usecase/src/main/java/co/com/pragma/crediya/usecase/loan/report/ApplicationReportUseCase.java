@@ -1,9 +1,9 @@
 package co.com.pragma.crediya.usecase.loan.report;
 
-import co.com.pragma.crediya.model.loan.report.ApplicationReport;
-import co.com.pragma.crediya.model.loan.report.LoanApplicationFilter;
 import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
+import co.com.pragma.crediya.model.loan.report.ApplicationReport;
 import co.com.pragma.crediya.model.loan.report.CustomerApplication;
+import co.com.pragma.crediya.model.loan.report.LoanApplicationFilter;
 import co.com.pragma.crediya.model.loan.report.LoanApplicationsReport;
 import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
 import co.com.pragma.crediya.model.user.User;
@@ -12,6 +12,7 @@ import co.com.pragma.crediya.usecase.loan.utils.ApplicationCalculatorUtils;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,23 +22,22 @@ public record ApplicationReportUseCase(ApplicationRepository applicationReposito
                                        UserPort userPort,
                                        LoggerPort logger) {
 
+    private static final BigDecimal MONTHS_IN_YEAR_PERCENT = BigDecimal.valueOf(1200);
+
+    private static final int INTEREST_RATE_SCALE = 10;
+
+    private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
+
     public Mono<LoanApplicationsReport> getLoanApplicationsReport(LoanApplicationFilter filter) {
         logger.info("Get loan applications report with filters: {}", filter);
 
-        Mono<List<ApplicationReport>> reportsMono;
-        Mono<Long> countMono;
+        Mono<List<ApplicationReport>> reportsMono = filter.onlyPagination()
+                ? applicationRepository.findApplicationsReport(filter.limit(), filter.page()).collectList()
+                : applicationRepository.findApplicationsReport(filter).collectList();
 
-        if (filter.onlyPagination()) {
-            reportsMono = applicationRepository
-                    .findApplicationsReport(filter.limit(), filter.page())
-                    .collectList();
-            countMono = applicationRepository.countLoanApplications();
-        } else {
-            reportsMono = applicationRepository
-                    .findApplicationsReport(filter)
-                    .collectList();
-            countMono = applicationRepository.countLoanApplications(filter);
-        }
+        Mono<Long> countMono = filter.onlyPagination()
+                ? applicationRepository.countLoanApplications()
+                : applicationRepository.countLoanApplications(filter);
 
         return Mono.zip(reportsMono, countMono)
                 .flatMap(tuple -> {
@@ -57,47 +57,37 @@ public record ApplicationReportUseCase(ApplicationRepository applicationReposito
                     logger.info("Collected emails from reports: {}", emails);
 
                     return userPort.getUsersByEmails(emails)
-                            .map(users -> {
-                                Map<String, User> userMap = users.stream()
-                                        .collect(Collectors.toMap(User::email, u -> u));
-
-                                Map<String, BigDecimal> debtsByEmail = results.stream()
-                                        .collect(Collectors.groupingBy(
-                                                ApplicationReport::email,
-                                                Collectors.reducing(
-                                                        BigDecimal.ZERO,
-                                                        r -> ApplicationCalculatorUtils.calculateMonthlyPayment(
-                                                                r.amount(),
-                                                                r.interestRate(),
-                                                                r.term()
-                                                        ),
-                                                        BigDecimal::add
-                                                )
-                                        ));
-
-                                return results.stream()
-                                        .map(r -> {
-                                            User user = userMap.get(r.email());
-                                            BigDecimal baseSalary = user != null ? user.baseSalary() : BigDecimal.ZERO;
-                                            BigDecimal totalMonthlyDebt = debtsByEmail.getOrDefault(r.email(), BigDecimal.ZERO);
-
-                                            logger.info("Preparing CustomerApplication for email: {}", r.email());
-
-                                            return new CustomerApplication(
-                                                    r.email(),
-                                                    baseSalary,
-                                                    totalMonthlyDebt,
-                                                    r.type(),
-                                                    r.amount(),
-                                                    r.term(),
-                                                    r.interestRate(),
-                                                    r.status()
-                                            );
-                                        })
-                                        .toList();
-                            })
+                            .map(users -> buildCustomerApplications(results, users))
                             .map(data -> new LoanApplicationsReport(data, count));
-                });
+                })
+                .doOnSuccess(report -> logger.info("Loan applications report generated successfully, total records={}", report.totalItems()))
+                .doOnError(e -> logger.error("Failed to generate loan applications report", e));
+    }
+
+    private List<CustomerApplication> buildCustomerApplications(List<ApplicationReport> reports, List<User> users) {
+        Map<String, User> userMap = users.stream()
+                .collect(Collectors.toMap(User::email, u -> u));
+
+        return reports.stream()
+                .map(report -> {
+                    User user = userMap.get(report.email());
+                    BigDecimal baseSalary = user != null ? user.baseSalary() : BigDecimal.ZERO;
+
+                    BigDecimal interestRateDecimal = report.interestRate().divide(MONTHS_IN_YEAR_PERCENT, INTEREST_RATE_SCALE, ROUNDING_MODE);
+                    BigDecimal monthlyPayment = ApplicationCalculatorUtils.calculateMonthlyPayment(report.amount(), interestRateDecimal, report.term());
+
+                    return new CustomerApplication(
+                            report.email(),
+                            baseSalary,
+                            monthlyPayment,
+                            report.type(),
+                            report.amount(),
+                            report.term(),
+                            report.interestRate(),
+                            report.status()
+                    );
+                })
+                .toList();
     }
 
 }

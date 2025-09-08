@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -28,9 +27,9 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationUseCaseTest {
@@ -43,6 +42,7 @@ class ApplicationUseCaseTest {
 
     @Mock
     private ApplicationRepository applicationRepository;
+
     @Mock
     private LoggerPort logger;
 
@@ -52,7 +52,6 @@ class ApplicationUseCaseTest {
     @Mock
     private Jwt mockJwt;
 
-    @InjectMocks
     private ApplicationUseCase useCase;
 
     private Application application;
@@ -63,8 +62,9 @@ class ApplicationUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        when(transactionalPort.transactional(any(Mono.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        useCase = new ApplicationUseCase(typeRepository, statusRepository, applicationRepository, logger, transactionalPort);
+
+        lenient().when(transactionalPort.transactional(any(Mono.class))).then(returnsFirstArg());
 
         User loggedUser = new User("1234567890", "jhondoe@example.com", BigDecimal.valueOf(1200000));
 
@@ -75,6 +75,7 @@ class ApplicationUseCaseTest {
         application = new Application(UUID.randomUUID(), BigDecimal.valueOf(4000000), 12, loggedUser.identificationNumber(), loggedUser.email(), type, status);
 
         when(mockJwt.subject()).thenReturn(loggedUser.email());
+
         when(mockJwt.identificationNumber()).thenReturn(loggedUser.identificationNumber());
     }
 
@@ -105,7 +106,9 @@ class ApplicationUseCaseTest {
                 .verifyComplete();
 
         verify(typeRepository).findByName(DomainConstants.MICROCREDIT);
+
         verify(statusRepository).findByName(DomainConstants.DEFAULT_PENDING_STATUS);
+
         verify(applicationRepository).save(any(Application.class));
     }
 
@@ -120,12 +123,14 @@ class ApplicationUseCaseTest {
                 .verify();
 
         verify(typeRepository).findByName(DomainConstants.MICROCREDIT);
+
         verify(statusRepository).findByName(DomainConstants.DEFAULT_PENDING_STATUS);
     }
 
     @Test
     void saveApplicationFailsWhenStatusNotFound() {
         when(typeRepository.findByName(DomainConstants.MICROCREDIT)).thenReturn(Mono.just(type));
+
         when(statusRepository.findByName(DomainConstants.DEFAULT_PENDING_STATUS)).thenReturn(Mono.empty());
 
         StepVerifier.create(useCase.save(application, mockJwt))
@@ -156,8 +161,8 @@ class ApplicationUseCaseTest {
                 .verify();
 
         verify(typeRepository).findByName(DomainConstants.MICROCREDIT);
-        verify(statusRepository).findByName(DomainConstants.DEFAULT_PENDING_STATUS);
 
+        verify(statusRepository).findByName(DomainConstants.DEFAULT_PENDING_STATUS);
     }
 
 }

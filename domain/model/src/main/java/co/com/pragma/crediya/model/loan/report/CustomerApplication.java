@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 public record CustomerApplication(
         String email,
         BigDecimal baseSalary,
-        BigDecimal totalMonthlyDebt,
+        BigDecimal monthlyPayment,
         String type,
         BigDecimal amount,
         int term,

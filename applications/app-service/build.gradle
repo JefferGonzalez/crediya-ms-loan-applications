@@ -17,7 +17,6 @@ dependencies {
 
     testImplementation 'com.tngtech.archunit:archunit:1.4.1'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind'
-    testImplementation 'com.h2database:h2'
 }
 
 tasks.register('explodedJar', Copy) {
