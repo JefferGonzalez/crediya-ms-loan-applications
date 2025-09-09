@@ -19,6 +19,7 @@ import java.math.BigDecimal;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -63,7 +64,7 @@ class LoanApplicationCustomRepositoryImplTest {
 
         when(client.sql(anyString())).thenReturn(spec);
 
-        when(spec.bind(anyString(), any())).thenReturn(spec);
+        when(spec.bindValues(anyMap())).thenReturn(spec);
     }
 
     @Test
@@ -76,14 +77,14 @@ class LoanApplicationCustomRepositoryImplTest {
                 .assertNext(projection -> assertThat(projection.status()).isEqualTo(DomainConstants.DEFAULT_PENDING_STATUS))
                 .verifyComplete();
 
-        verify(spec, atLeastOnce()).bind(anyString(), any());
+        verify(spec, atLeastOnce()).bindValues(anyMap());
     }
 
     @Test
     void countLoanApplications_shouldReturnMono() {
         long count = 5L;
 
-        when(spec.map(any(BiFunction.class))).thenReturn(fetchSpecCount);
+        when(spec.map(any(Function.class))).thenReturn(fetchSpecCount);
 
         when(fetchSpecCount.one()).thenReturn(Mono.just(count));
 
@@ -93,7 +94,7 @@ class LoanApplicationCustomRepositoryImplTest {
                 .assertNext(c -> assertThat(c).isEqualTo(count))
                 .verifyComplete();
 
-        verify(spec, atLeastOnce()).bind(anyString(), any());
+        verify(spec, atLeastOnce()).bindValues(anyMap());
     }
 
 }
