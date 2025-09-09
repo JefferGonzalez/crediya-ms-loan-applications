@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import java.util.Arrays;
+
 @Component
 @RequiredArgsConstructor
 public class SecurityContextRepository implements ServerSecurityContextRepository {
@@ -25,6 +27,12 @@ public class SecurityContextRepository implements ServerSecurityContextRepositor
 
     @Override
     public Mono<SecurityContext> load(ServerWebExchange exchange) {
+        String path = exchange.getRequest().getPath().value();
+
+        if (isPublicPath(path)) {
+            return Mono.empty();
+        }
+
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null) {
@@ -42,4 +50,16 @@ public class SecurityContextRepository implements ServerSecurityContextRepositor
                 .authenticate(auth)
                 .map(SecurityContextImpl::new);
     }
+
+    private boolean isPublicPath(String path) {
+        return Arrays.stream(ApiConstants.PUBLIC_PATTERNS)
+                .anyMatch(pattern -> {
+                    if (pattern.endsWith("/**")) {
+                        String basePath = pattern.substring(0, pattern.length() - 3);
+                        return path.startsWith(basePath);
+                    }
+                    return path.equals(pattern);
+                });
+    }
+
 }

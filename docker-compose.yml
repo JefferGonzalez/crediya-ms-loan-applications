@@ -1,0 +1,94 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: postgres17-db
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - crediya-network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin-web
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - crediya-network
+
+  crediya-ms-auth:
+    build:
+      context: ./crediya-ms-auth
+      dockerfile: deployment/Dockerfile
+    container_name: crediya-ms-auth
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PORT=8080
+      - CORS_ALLOWED_ORIGINS=${CORS_AUTH}
+      - R2DBC_DATABASE=${R2DBC_AUTH_DATABASE}
+    ports:
+      - "${MS_AUTH_PORT}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - crediya-network
+
+  crediya-ms-loan-applications:
+    build:
+      context: ./crediya-ms-loan-applications
+      dockerfile: deployment/Dockerfile
+    container_name: crediya-ms-loan-applications
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PORT=8080
+      - CORS_ALLOWED_ORIGINS=${CORS_LOAN_APPLICATIONS}
+      - R2DBC_DATABASE=${R2DBC_LOAN_DATABASE}
+    ports:
+      - "${MS_LOAN_APPLICATIONS_PORT}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - crediya-network
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  crediya-network:
+    driver: bridge

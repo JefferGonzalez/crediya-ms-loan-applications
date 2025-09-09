@@ -10,6 +10,9 @@ public final class ApiConstants {
     public static final String LOAN_APPLICATIONS_PATH = API_V1 + "/loan-applications";
 
     public static final String[] PUBLIC_PATTERNS = {
+            "/actuator",
+            "/actuator/health",
+            "/actuator/prometheus",
             "/v3/api-docs/**",
             "/swagger-ui/**",
             "/swagger-ui.html"

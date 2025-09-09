@@ -336,4 +336,4 @@ gradle-app.setting
 build-cache
 
 ### Enviroment variables ###
-.env.docker
+.env
