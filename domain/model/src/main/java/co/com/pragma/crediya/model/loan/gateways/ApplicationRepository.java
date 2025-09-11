@@ -6,7 +6,11 @@ import co.com.pragma.crediya.model.loan.report.LoanApplicationFilter;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.UUID;
+
 public interface ApplicationRepository {
+
+    Mono<Application> findById(UUID id);
 
     Mono<Application> save(Application application);
 

@@ -1,8 +1,10 @@
 package co.com.pragma.crediya.model.loan.report;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public record CustomerApplication(
+        UUID id,
         String email,
         BigDecimal baseSalary,
         BigDecimal monthlyPayment,

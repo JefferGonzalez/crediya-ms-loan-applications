@@ -7,4 +7,6 @@ public final class WebErrorMessages {
 
     public static final String REQUEST_BODY_REQUIRED = "Request body is required";
 
+    public static final String INVALID_UUID = "Invalid UUID provided";
+
 }

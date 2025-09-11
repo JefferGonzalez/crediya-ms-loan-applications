@@ -5,6 +5,7 @@ import co.com.pragma.crediya.api.constants.FilterParams;
 import co.com.pragma.crediya.api.dto.CustomerApplicationsReport;
 import co.com.pragma.crediya.api.dto.LoanApplicationResponse;
 import co.com.pragma.crediya.api.dto.SaveLoanApplicationRequest;
+import co.com.pragma.crediya.api.dto.UpdateStatusRequest;
 import co.com.pragma.crediya.api.exceptions.ProblemDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -106,12 +107,58 @@ public class RouterRest {
                                     )
                             }
                     )
+            ),
+            @RouterOperation(
+                    path = ApiConstants.UPDATE_LOAN_STATUS_PATH,
+                    produces = {MediaType.APPLICATION_JSON_VALUE},
+                    method = RequestMethod.PATCH,
+                    beanClass = LoanApplicationHandler.class,
+                    beanMethod = "updateStatus",
+                    operation = @Operation(
+                            operationId = "updateLoanStatus",
+                            summary = "Update the status of a loan application",
+                            description = "Updates the status of an existing loan application (e.g., APPROVED, REJECTED).",
+                            parameters = {
+                                    @Parameter(name = "id", description = "Loan application ID", in = ParameterIn.PATH, required = true, example = "123e4567-e89b-12d3-a456-426614174000")
+                            },
+                            requestBody = @RequestBody(
+                                    content = @Content(
+                                            schema = @Schema(implementation = UpdateStatusRequest.class)
+                                    ),
+                                    required = true,
+                                    description = "Request body for approve or reject a loan application"
+                            ),
+                            security = @SecurityRequirement(name = "bearerAuth"),
+                            responses = {
+                                    @ApiResponse(
+                                            responseCode = "200",
+                                            description = "Loan status updated successfully",
+                                            content = @Content(schema = @Schema(implementation = LoanApplicationResponse.class))
+                                    ),
+                                    @ApiResponse(
+                                            responseCode = "400",
+                                            description = "Invalid request. Status transition is not allowed or parameters are missing.",
+                                            content = @Content(schema = @Schema(implementation = ProblemDetails.class))
+                                    ),
+                                    @ApiResponse(
+                                            responseCode = "404",
+                                            description = "Loan application not found.",
+                                            content = @Content(schema = @Schema(implementation = ProblemDetails.class))
+                                    ),
+                                    @ApiResponse(
+                                            responseCode = "500",
+                                            description = "Internal server error while updating the loan status.",
+                                            content = @Content(schema = @Schema(implementation = ProblemDetails.class))
+                                    )
+                            }
+                    )
             )
     })
     public RouterFunction<ServerResponse> routerFunction(LoanApplicationHandler handler) {
         return RouterFunctions.route()
                 .GET(ApiConstants.LOAN_APPLICATIONS_PATH, handler::getReport)
                 .POST(ApiConstants.LOAN_APPLICATIONS_PATH, handler::createLoanApplication)
+                .PATCH(ApiConstants.UPDATE_LOAN_STATUS_PATH, handler::updateStatus)
                 .build();
     }
 

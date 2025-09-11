@@ -33,6 +33,10 @@ public class SecurityConfig {
                         .hasAnyAuthority(
                                 DomainConstants.ADVISOR_ROLE
                         )
+                        .pathMatchers(HttpMethod.PATCH, ApiConstants.UPDATE_LOAN_STATUS_PATH)
+                        .hasAnyAuthority(
+                                DomainConstants.ADVISOR_ROLE
+                        )
                         .pathMatchers(HttpMethod.POST, ApiConstants.LOAN_APPLICATIONS_PATH)
                         .hasAnyAuthority(
                                 DomainConstants.CUSTOMER_ROLE
