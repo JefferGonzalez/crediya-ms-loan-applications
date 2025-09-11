@@ -1,2 +1,0 @@
-CREATE DATABASE crediya_auth;
-CREATE DATABASE crediya_loan_applications;
