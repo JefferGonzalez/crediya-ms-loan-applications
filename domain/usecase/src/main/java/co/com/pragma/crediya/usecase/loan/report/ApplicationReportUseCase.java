@@ -77,6 +77,7 @@ public record ApplicationReportUseCase(ApplicationRepository applicationReposito
                     BigDecimal monthlyPayment = ApplicationCalculatorUtils.calculateMonthlyPayment(report.amount(), interestRateDecimal, report.term());
 
                     return new CustomerApplication(
+                            report.id(),
                             report.email(),
                             baseSalary,
                             monthlyPayment,

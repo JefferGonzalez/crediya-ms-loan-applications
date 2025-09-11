@@ -11,8 +11,8 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring", uses = {LoanTypeMapper.class, LoanStatusMapper.class}, injectionStrategy = InjectionStrategy.CONSTRUCTOR)
 public interface LoanApplicationMapper {
 
-    @Mapping(target = "type", ignore = true)
-    @Mapping(target = "status", ignore = true)
+    @Mapping(source = "typeId", target = "type.id")
+    @Mapping(source = "statusId", target = "status.id")
     Application toDomain(LoanApplicationEntity loanApplicationEntity);
 
     ApplicationReport toDomain(LoanApplicationProjection loanApplicationProjection);

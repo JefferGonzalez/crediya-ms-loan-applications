@@ -1,27 +1,33 @@
 spring:
-  r2dbc:
-    url: jdbc:postgresql://${R2DBC_HOST}:${R2DBC_PORT}/${R2DBC_DATABASE}
-    username: ${R2DBC_USERNAME}
-    password: ${R2DBC_PASSWORD}
-    properties:
-      schema: ${R2DBC_SCHEMA}
-
   flyway:
-    url: jdbc:postgresql://${R2DBC_HOST}:${R2DBC_PORT}/${R2DBC_DATABASE}
-    user: ${R2DBC_USERNAME}
-    password: ${R2DBC_PASSWORD}
-    default-schema: ${R2DBC_SCHEMA}
+    url: "jdbc:postgresql://${R2DBC_HOST}:${R2DBC_PORT}/${R2DBC_DATABASE}"
+    user: "${R2DBC_USERNAME}"
+    password: "${R2DBC_PASSWORD}"
+    default-schema: "${R2DBC_SCHEMA}"
+    locations: classpath:db/migration
 
 adapters:
+  r2dbc:
+    host: "${R2DBC_HOST}"
+    port: "${R2DBC_PORT}"
+    database: "${R2DBC_DATABASE}"
+    schema: "${R2DBC_SCHEMA}"
+    username: "${R2DBC_USERNAME}"
+    password: "${R2DBC_PASSWORD}"
+
   rest-consumer:
     timeout: 5000
-    url: ${AUTH_MICROSERVICE_URL}
+    url: "${AUTH_MICROSERVICE_URL}"
+
+  sqs:
+    region: "${AWS_SQS_REGION}"
+    queueUrl: "${AWS_SQS_QUEUE_URL}"
 
 application:
   security:
     jwt:
       expiration: 3600000
-      secret-key: ${JWT_SECRET_KEY}
+      secret-key: "${JWT_SECRET_KEY}"
 
 logging:
   level:

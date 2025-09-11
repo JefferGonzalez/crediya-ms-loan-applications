@@ -13,6 +13,8 @@ public final class ValidationErrorMessages {
 
     public static final String TYPE_REQUIRED = "Type is required.";
 
+    public static final String STATUS_REQUIRED = "Status is required.";
+
     public static final String TERM_RANGE = "Term must be a number between 1 and 360";
 
 }

@@ -6,6 +6,8 @@ import co.com.pragma.crediya.r2dbc.mapper.LoanTypeMapper;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
+import java.util.UUID;
+
 @Repository
 public class LoanTypeRepositoryAdapter implements TypeRepository {
 
@@ -16,6 +18,12 @@ public class LoanTypeRepositoryAdapter implements TypeRepository {
     public LoanTypeRepositoryAdapter(LoanTypeReactiveRepository loanTypeReactiveRepository, LoanTypeMapper loanTypeMapper) {
         this.loanTypeReactiveRepository = loanTypeReactiveRepository;
         this.loanTypeMapper = loanTypeMapper;
+    }
+
+    @Override
+    public Mono<Type> findById(UUID id) {
+        return loanTypeReactiveRepository.findById(id)
+                .map(loanTypeMapper::toDomain);
     }
 
     @Override

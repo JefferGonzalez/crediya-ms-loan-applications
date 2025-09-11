@@ -2,6 +2,7 @@ package co.com.pragma.crediya.config;
 
 import co.com.pragma.crediya.model.jwt.gateways.JwtProviderPort;
 import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
+import co.com.pragma.crediya.model.notification.gateways.NotificationPort;
 import co.com.pragma.crediya.model.loan.gateways.StatusRepository;
 import co.com.pragma.crediya.model.loan.gateways.TypeRepository;
 import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
@@ -72,6 +73,11 @@ class UseCasesConfigTest {
         @Bean
         public JwtProviderPort jwtProvider() {
             return Mockito.mock(JwtProviderPort.class);
+        }
+
+        @Bean
+        public NotificationPort notificationPort() {
+            return Mockito.mock(NotificationPort.class);
         }
 
     }

@@ -1,13 +1,15 @@
 package co.com.pragma.crediya.r2dbc;
 
 import co.com.pragma.crediya.model.loan.Application;
+import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
 import co.com.pragma.crediya.model.loan.report.ApplicationReport;
 import co.com.pragma.crediya.model.loan.report.LoanApplicationFilter;
-import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
 import co.com.pragma.crediya.r2dbc.mapper.LoanApplicationMapper;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.UUID;
 
 @Repository
 public class LoanApplicationRepositoryAdapter implements ApplicationRepository {
@@ -19,6 +21,12 @@ public class LoanApplicationRepositoryAdapter implements ApplicationRepository {
     public LoanApplicationRepositoryAdapter(LoanApplicationReactiveRepository loanApplicationReactiveRepository, LoanApplicationMapper loanApplicationMapper) {
         this.loanApplicationReactiveRepository = loanApplicationReactiveRepository;
         this.loanApplicationMapper = loanApplicationMapper;
+    }
+
+    @Override
+    public Mono<Application> findById(UUID id) {
+        return loanApplicationReactiveRepository.findById(id)
+                .map(loanApplicationMapper::toDomain);
     }
 
     @Override
