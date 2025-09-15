@@ -62,7 +62,7 @@ class LoanApplicationMapperTest {
 
     @Test
     void toEntity_fromApplication() {
-        Type type = new Type(UUID.randomUUID(), DomainConstants.MICROCREDIT, BigDecimal.valueOf(5.5), null, null, null);
+        Type type = new Type(UUID.randomUUID(), DomainConstants.MICROCREDIT, BigDecimal.valueOf(1000), BigDecimal.valueOf(2000), 12, 34, null, null);
         Status status = new Status(UUID.randomUUID(), DomainConstants.DEFAULT_PENDING_STATUS, "Default status");
 
         Application application = new Application(UUID.randomUUID(), BigDecimal.valueOf(1500), 18, "123456789", "johndoe@example.com", type, status);

@@ -42,6 +42,7 @@ class JwtProviderAdapterTest {
                 .subject(user.email())
                 .claim(UserFieldNames.ROLES, List.of(DomainConstants.ADMIN_ROLE))
                 .claim(UserFieldNames.IDENTIFICATION_NUMBER, user.identificationNumber())
+                .claim(UserFieldNames.BASE_SALARY, user.baseSalary())
                 .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(properties.getSecretKey())))
                 .compact();
 
@@ -51,6 +52,7 @@ class JwtProviderAdapterTest {
         assertThat(jwt.subject()).isEqualTo(user.email());
         assertThat(jwt.roles()).containsExactly(DomainConstants.ADMIN_ROLE);
         assertThat(jwt.identificationNumber()).isEqualTo(user.identificationNumber());
+        assertThat(jwt.baseSalary()).isEqualTo(user.baseSalary());
     }
 
 }

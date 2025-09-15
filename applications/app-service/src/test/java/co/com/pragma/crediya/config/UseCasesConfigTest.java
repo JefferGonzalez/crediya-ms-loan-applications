@@ -2,10 +2,12 @@ package co.com.pragma.crediya.config;
 
 import co.com.pragma.crediya.model.jwt.gateways.JwtProviderPort;
 import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
+import co.com.pragma.crediya.model.loan.gateways.LoanValidationPort;
 import co.com.pragma.crediya.model.notification.gateways.NotificationPort;
 import co.com.pragma.crediya.model.loan.gateways.StatusRepository;
 import co.com.pragma.crediya.model.loan.gateways.TypeRepository;
 import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
+import co.com.pragma.crediya.model.notification.gateways.NotificationRendererPort;
 import co.com.pragma.crediya.model.transaction.gateways.TransactionalPort;
 import co.com.pragma.crediya.model.user.gateways.UserPort;
 import org.junit.jupiter.api.Test;
@@ -80,5 +82,16 @@ class UseCasesConfigTest {
             return Mockito.mock(NotificationPort.class);
         }
 
+        @Bean
+        public NotificationRendererPort notificationRendererPort() {
+            return Mockito.mock(NotificationRendererPort.class);
+        }
+
+        @Bean
+        public LoanValidationPort loanValidationPort() {
+            return Mockito.mock(LoanValidationPort.class);
+        }
+
     }
+
 }

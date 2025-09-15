@@ -12,7 +12,6 @@ import co.com.pragma.crediya.usecase.loan.utils.ApplicationCalculatorUtils;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,12 +20,6 @@ import java.util.stream.Collectors;
 public record ApplicationReportUseCase(ApplicationRepository applicationRepository,
                                        UserPort userPort,
                                        LoggerPort logger) {
-
-    private static final BigDecimal MONTHS_IN_YEAR_PERCENT = BigDecimal.valueOf(1200);
-
-    private static final int INTEREST_RATE_SCALE = 10;
-
-    private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
 
     public Mono<LoanApplicationsReport> getLoanApplicationsReport(LoanApplicationFilter filter) {
         logger.info("Get loan applications report with filters: {}", filter);
@@ -73,8 +66,8 @@ public record ApplicationReportUseCase(ApplicationRepository applicationReposito
                     User user = userMap.get(report.email());
                     BigDecimal baseSalary = user != null ? user.baseSalary() : BigDecimal.ZERO;
 
-                    BigDecimal interestRateDecimal = report.interestRate().divide(MONTHS_IN_YEAR_PERCENT, INTEREST_RATE_SCALE, ROUNDING_MODE);
-                    BigDecimal monthlyPayment = ApplicationCalculatorUtils.calculateMonthlyPayment(report.amount(), interestRateDecimal, report.term());
+                    BigDecimal monthlyRate = ApplicationCalculatorUtils.annualToMonthlyRate(report.interestRate());
+                    BigDecimal monthlyPayment = ApplicationCalculatorUtils.calculateMonthlyPayment(report.amount(), monthlyRate, report.term());
 
                     return new CustomerApplication(
                             report.id(),

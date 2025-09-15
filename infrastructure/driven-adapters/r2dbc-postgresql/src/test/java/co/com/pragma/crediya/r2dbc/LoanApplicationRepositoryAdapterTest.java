@@ -1,11 +1,13 @@
 package co.com.pragma.crediya.r2dbc;
 
 import co.com.pragma.crediya.model.common.constants.DomainConstants;
+import co.com.pragma.crediya.model.loan.ActiveApplication;
 import co.com.pragma.crediya.model.loan.Application;
 import co.com.pragma.crediya.model.loan.report.ApplicationReport;
 import co.com.pragma.crediya.model.loan.report.LoanApplicationFilter;
 import co.com.pragma.crediya.r2dbc.entity.LoanApplicationEntity;
 import co.com.pragma.crediya.r2dbc.mapper.LoanApplicationMapper;
+import co.com.pragma.crediya.r2dbc.projection.LoanAmortizationProjection;
 import co.com.pragma.crediya.r2dbc.projection.LoanApplicationProjection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -82,6 +84,22 @@ class LoanApplicationRepositoryAdapterTest {
                 5,
                 1
         );
+    }
+
+    @Test
+    void findById_ShouldReturnApplication_WhenEntityExists() {
+        when(reactiveRepository.findById(application.id()))
+                .thenReturn(Mono.just(loanApplicationEntity));
+
+        when(mapper.toDomain(loanApplicationEntity)).thenReturn(application);
+
+        StepVerifier.create(adapter.findById(application.id()))
+                .expectNext(application)
+                .verifyComplete();
+
+        verify(reactiveRepository).findById(application.id());
+
+        verify(mapper).toDomain(loanApplicationEntity);
     }
 
     @Test
@@ -173,6 +191,26 @@ class LoanApplicationRepositoryAdapterTest {
                 .verifyComplete();
 
         verify(reactiveRepository).countLoanApplications(filter);
+    }
+
+    @Test
+    void findActiveLoansByIdentificationNumber_ShouldReturnActiveApplications_WhenEntitiesExist() {
+        ActiveApplication activeApplication = new ActiveApplication(BigDecimal.valueOf(1000000), 12, BigDecimal.valueOf(20.5));
+
+        LoanAmortizationProjection projection = new LoanAmortizationProjection(activeApplication.amount(), activeApplication.term(), activeApplication.interestRate());
+
+        when(reactiveRepository.queryActiveLoansByIdentificationNumber(application.identificationNumber()))
+                .thenReturn(Flux.just(projection));
+
+        when(mapper.toDomain(projection)).thenReturn(activeApplication);
+
+        StepVerifier.create(adapter.findActiveLoansByIdentificationNumber(application.identificationNumber()))
+                .expectNext(activeApplication)
+                .verifyComplete();
+
+        verify(reactiveRepository).queryActiveLoansByIdentificationNumber(application.identificationNumber());
+
+        verify(mapper).toDomain(projection);
     }
 
 }

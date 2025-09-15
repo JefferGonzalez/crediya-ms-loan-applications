@@ -1,5 +1,6 @@
 package co.com.pragma.crediya.r2dbc;
 
+import co.com.pragma.crediya.model.loan.ActiveApplication;
 import co.com.pragma.crediya.model.loan.Application;
 import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
 import co.com.pragma.crediya.model.loan.report.ApplicationReport;
@@ -57,6 +58,12 @@ public class LoanApplicationRepositoryAdapter implements ApplicationRepository {
     @Override
     public Mono<Long> countLoanApplications(LoanApplicationFilter filter) {
         return loanApplicationReactiveRepository.countLoanApplications(filter);
+    }
+
+    @Override
+    public Flux<ActiveApplication> findActiveLoansByIdentificationNumber(String identificationNumber) {
+        return loanApplicationReactiveRepository.queryActiveLoansByIdentificationNumber(identificationNumber)
+                .map(loanApplicationMapper::toDomain);
     }
 
 }

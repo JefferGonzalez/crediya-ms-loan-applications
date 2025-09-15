@@ -1,8 +1,14 @@
 package co.com.pragma.crediya.sqs.sender;
 
+import co.com.pragma.crediya.model.loan.ApplicationRiskEvaluation;
+import co.com.pragma.crediya.model.loan.gateways.LoanValidationPort;
 import co.com.pragma.crediya.model.notification.NotificationMessage;
 import co.com.pragma.crediya.model.notification.gateways.NotificationPort;
 import co.com.pragma.crediya.sqs.sender.config.SQSSenderProperties;
+import co.com.pragma.crediya.sqs.sender.exceptions.LoanSerializationException;
+import co.com.pragma.crediya.sqs.sender.exceptions.NotificationSerializationException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
@@ -14,35 +20,52 @@ import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 @Service
 @Log4j2
 @RequiredArgsConstructor
-public class SQSSender implements NotificationPort {
+public class SQSSender implements NotificationPort, LoanValidationPort {
 
     private final SQSSenderProperties properties;
 
     private final SqsAsyncClient client;
 
+    private final ObjectMapper objectMapper;
+
     @Override
-    public void sendNotification(NotificationMessage message) {
-        String json = message.toJson();
+    public Mono<Void> sendNotification(NotificationMessage message) {
+        log.info("Sending email notification to SQS for recipient: [{}] : {}", message.to(), message);
 
-        log.info("Sending email notification to SQS for recipient: [{}] : {}", message.to(), json);
+        String queueUrl = properties.queueUrl() + properties.loanNotificationQueueName();
 
-        send(json)
-                .subscribe(
-                        messageId -> log.info("Email notification for {} queued successfully with Message ID: {}", message.to(), messageId),
-                        error -> log.error("Failed to send email notification to SQS for recipient: {}. Error: {}", message.to(), error.getMessage())
-                );
+        return Mono.fromCallable(() -> objectMapper.writeValueAsString(message))
+                .onErrorMap(JsonProcessingException.class, e -> new NotificationSerializationException())
+                .flatMap(json -> send(json, queueUrl))
+                .doOnSuccess(messageId -> log.info("Email notification for {} queued successfully with Message ID: {}", message.to(), messageId))
+                .doOnError(error -> log.error("Failed to send email notification to SQS for recipient: {}. Error: {}", message.to(), error.getMessage()))
+                .then();
     }
 
-    private Mono<String> send(String message) {
-        return Mono.fromCallable(() -> buildRequest(message))
+    @Override
+    public Mono<Void> validateLoanAutomatically(ApplicationRiskEvaluation applicationRiskEvaluation) {
+        log.info("Sending loan validation request to SQS for application [{}] : {}", applicationRiskEvaluation.id(), applicationRiskEvaluation);
+
+        String queueUrl = properties.queueUrl() + properties.loanAutoValidationQueueName();
+
+        return Mono.fromCallable(() -> objectMapper.writeValueAsString(applicationRiskEvaluation))
+                .onErrorMap(JsonProcessingException.class, e -> new LoanSerializationException())
+                .flatMap(json -> send(json, queueUrl))
+                .doOnSuccess(messageId -> log.info("Loan validation queued successfully with Message ID: {}", messageId))
+                .doOnError(error -> log.error("Failed to send loan validation to SQS. Error: {}", error.getMessage()))
+                .then();
+    }
+
+    private Mono<String> send(String message, String queueUrl) {
+        return Mono.fromCallable(() -> buildRequest(message, queueUrl))
                 .flatMap(request -> Mono.fromFuture(client.sendMessage(request)))
                 .doOnNext(response -> log.info("Message sent {}", response.messageId()))
                 .map(SendMessageResponse::messageId);
     }
 
-    private SendMessageRequest buildRequest(String message) {
+    private SendMessageRequest buildRequest(String message, String queueUrl) {
         return SendMessageRequest.builder()
-                .queueUrl(properties.queueUrl())
+                .queueUrl(queueUrl)
                 .messageBody(message)
                 .build();
     }

@@ -22,6 +22,18 @@ adapters:
   sqs:
     region: "${AWS_SQS_REGION}"
     queueUrl: "${AWS_SQS_QUEUE_URL}"
+    loanNotificationQueueName: "${AWS_SQS_LOAN_NOTIFICATION_QUEUE_NAME}"
+    loanAutoValidationQueueName: "${AWS_SQS_LOAN_AUTO_VALIDATION_QUEUE_NAME}"
+
+entrypoint:
+  sqs:
+    region: "${AWS_SQS_REGION}"
+    queueUrl: "${AWS_SQS_QUEUE_URL}"
+    loanValidationResponseQueueName: "${AWS_SQS_LOAN_VALIDATION_RESPONSE_QUEUE_NAME}"
+    waitTimeSeconds: 20
+    maxNumberOfMessages: 10
+    visibilityTimeoutSeconds: 10
+    numberOfThreads: 1
 
 application:
   security:

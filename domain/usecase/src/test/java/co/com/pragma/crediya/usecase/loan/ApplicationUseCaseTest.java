@@ -1,18 +1,20 @@
 package co.com.pragma.crediya.usecase.loan;
 
+import co.com.pragma.crediya.model.StatusChange;
 import co.com.pragma.crediya.model.common.constants.DomainConstants;
 import co.com.pragma.crediya.model.jwt.Jwt;
-import co.com.pragma.crediya.model.loan.Application;
-import co.com.pragma.crediya.model.loan.Status;
-import co.com.pragma.crediya.model.loan.Type;
+import co.com.pragma.crediya.model.loan.*;
 import co.com.pragma.crediya.model.loan.constants.ApplicationConstants;
 import co.com.pragma.crediya.model.loan.exceptions.*;
 import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
+import co.com.pragma.crediya.model.loan.gateways.LoanValidationPort;
 import co.com.pragma.crediya.model.loan.gateways.StatusRepository;
 import co.com.pragma.crediya.model.loan.gateways.TypeRepository;
 import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
+import co.com.pragma.crediya.model.notification.LoanApproval;
 import co.com.pragma.crediya.model.notification.NotificationMessage;
 import co.com.pragma.crediya.model.notification.gateways.NotificationPort;
+import co.com.pragma.crediya.model.notification.gateways.NotificationRendererPort;
 import co.com.pragma.crediya.model.transaction.gateways.TransactionalPort;
 import co.com.pragma.crediya.model.user.User;
 import org.junit.jupiter.api.Assertions;
@@ -21,10 +23,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -45,7 +49,13 @@ class ApplicationUseCaseTest {
     private ApplicationRepository applicationRepository;
 
     @Mock
-    NotificationPort notificationPort;
+    private NotificationPort notificationPort;
+
+    @Mock
+    private NotificationRendererPort notificationRendererPort;
+
+    @Mock
+    LoanValidationPort loanValidationPort;
 
     @Mock
     private LoggerPort logger;
@@ -66,11 +76,11 @@ class ApplicationUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new ApplicationUseCase(typeRepository, statusRepository, applicationRepository, notificationPort, logger, transactionalPort);
+        useCase = new ApplicationUseCase(typeRepository, statusRepository, applicationRepository, notificationPort, notificationRendererPort, loanValidationPort, logger, transactionalPort);
 
         User loggedUser = new User("1234567890", "jhondoe@example.com", BigDecimal.valueOf(1200000));
 
-        type = new Type(UUID.randomUUID(), DomainConstants.MICROCREDIT, BigDecimal.valueOf(300000), BigDecimal.valueOf(50000000), BigDecimal.valueOf(25.00), true);
+        type = new Type(UUID.randomUUID(), DomainConstants.MICROCREDIT, BigDecimal.valueOf(300000), BigDecimal.valueOf(50000000), 12, 24, BigDecimal.valueOf(25.00), true);
 
         status = new Status(UUID.randomUUID(), DomainConstants.DEFAULT_PENDING_STATUS, "Application received, under evaluation");
 
@@ -81,6 +91,18 @@ class ApplicationUseCaseTest {
         lenient().when(mockJwt.subject()).thenReturn(loggedUser.email());
 
         lenient().when(mockJwt.identificationNumber()).thenReturn(loggedUser.identificationNumber());
+
+        lenient().when(applicationRepository.findActiveLoansByIdentificationNumber(application.identificationNumber()))
+                .thenReturn(Flux.empty());
+
+        lenient().when(loanValidationPort.validateLoanAutomatically(any(ApplicationRiskEvaluation.class)))
+                .thenReturn(Mono.empty());
+
+        lenient().when(notificationRendererPort.processLoanApprovalTemplate(any(LoanApproval.class)))
+                .thenReturn(Mono.just("<html><body>CREDIYA</body></html>"));
+
+        lenient().when(notificationRendererPort.processStatusChangeTemplate(any(StatusChange.class)))
+                .thenReturn(Mono.just("<html><body>CREDIYA</body></html>"));
     }
 
     @Test
@@ -149,6 +171,8 @@ class ApplicationUseCaseTest {
                 DomainConstants.MICROCREDIT,
                 BigDecimal.valueOf(10000000),
                 BigDecimal.valueOf(20000000),
+                12,
+                24,
                 BigDecimal.valueOf(25.00),
                 true
         );
@@ -184,7 +208,7 @@ class ApplicationUseCaseTest {
 
         when(applicationRepository.save(any(Application.class))).thenReturn(Mono.just(application));
 
-        doNothing().when(notificationPort).sendNotification(any(NotificationMessage.class));
+        when(notificationPort.sendNotification(any(NotificationMessage.class))).thenReturn(Mono.empty());
 
         StepVerifier.create(useCase.processAndApproveOrReject(appId, newStatus))
                 .assertNext(updated -> {
@@ -217,7 +241,7 @@ class ApplicationUseCaseTest {
 
         when(applicationRepository.save(any(Application.class))).thenReturn(Mono.just(application));
 
-        doNothing().when(notificationPort).sendNotification(any(NotificationMessage.class));
+        when(notificationPort.sendNotification(any(NotificationMessage.class))).thenReturn(Mono.empty());
 
         StepVerifier.create(useCase.processAndApproveOrReject(appId, newStatus))
                 .assertNext(updated -> {
@@ -291,6 +315,71 @@ class ApplicationUseCaseTest {
         verify(applicationRepository).findById(appId);
 
         verify(applicationRepository, never()).save(any(Application.class));
+    }
+
+    @Test
+    void processApplicationStatusUpdateApprovedSuccessfully() {
+        UUID appId = application.id();
+
+        PaymentDetail paymentDetail = new PaymentDetail(1, BigDecimal.valueOf(500000), BigDecimal.valueOf(400000), BigDecimal.valueOf(100000), BigDecimal.valueOf(3500000));
+        LoanValidation loanValidation = new LoanValidation(appId, DomainConstants.APPROVED_STATUS, List.of(paymentDetail));
+
+        Status approved = new Status(UUID.randomUUID(), DomainConstants.APPROVED_STATUS, "Application approved");
+
+        when(statusRepository.findByName(DomainConstants.APPROVED_STATUS)).thenReturn(Mono.just(approved));
+
+        when(applicationRepository.findById(appId)).thenReturn(Mono.just(application));
+
+        when(typeRepository.findById(application.type().id())).thenReturn(Mono.just(type));
+
+        when(applicationRepository.save(any(Application.class))).thenReturn(Mono.just(application));
+
+        when(notificationPort.sendNotification(any(NotificationMessage.class))).thenReturn(Mono.empty());
+
+        StepVerifier.create(useCase.processApplicationStatusUpdate(loanValidation))
+                .verifyComplete();
+
+        verify(statusRepository).findByName(DomainConstants.APPROVED_STATUS);
+
+        verify(applicationRepository).findById(appId);
+
+        verify(applicationRepository).save(any(Application.class));
+
+        verify(notificationRendererPort).processLoanApprovalTemplate(any(LoanApproval.class));
+
+        verify(notificationPort).sendNotification(any(NotificationMessage.class));
+    }
+
+    @Test
+    void processApplicationStatusUpdateRejectedSuccessfully() {
+        UUID appId = application.id();
+
+        LoanValidation loanValidation = new LoanValidation(appId, DomainConstants.REJECTED_STATUS, List.of());
+
+        Status rejected = new Status(UUID.randomUUID(), DomainConstants.REJECTED_STATUS, "Application rejected");
+
+        when(statusRepository.findByName(DomainConstants.REJECTED_STATUS)).thenReturn(Mono.just(rejected));
+
+        when(applicationRepository.findById(appId)).thenReturn(Mono.just(application));
+
+        when(typeRepository.findById(application.type().id())).thenReturn(Mono.just(type));
+
+        when(applicationRepository.save(any(Application.class))).thenReturn(Mono.just(application));
+
+        when(notificationPort.sendNotification(any(NotificationMessage.class))).thenReturn(Mono.empty());
+
+        StepVerifier.create(useCase.processApplicationStatusUpdate(loanValidation))
+                .verifyComplete();
+
+        verify(statusRepository).findByName(DomainConstants.REJECTED_STATUS);
+
+        verify(applicationRepository).findById(appId);
+
+        verify(applicationRepository).save(any(Application.class));
+
+        verify(notificationRendererPort).processStatusChangeTemplate(any(StatusChange.class));
+
+        verify(notificationPort).sendNotification(any(NotificationMessage.class));
     }
 
 }

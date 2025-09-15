@@ -36,8 +36,8 @@ class LoanTypeRepositoryAdapterTest {
 
     @BeforeEach
     void setUp() {
-        type = new Type(UUID.randomUUID(), DomainConstants.MICROCREDIT, BigDecimal.valueOf(300000), BigDecimal.valueOf(50000000), BigDecimal.valueOf(25.00), true);
-        loanTypeEntity = new LoanTypeEntity(type.id(), type.name(), type.minimumAmount(), type.maximumAmount(), type.interestRate(), type.automaticValidation());
+        type = new Type(UUID.randomUUID(), DomainConstants.MICROCREDIT, BigDecimal.valueOf(300000), BigDecimal.valueOf(50000000), 12, 36, BigDecimal.valueOf(25.00), true);
+        loanTypeEntity = new LoanTypeEntity(type.id(), type.name(), type.minimumAmount(), type.maximumAmount(), type.minimumTerm(), type.maximumTerm(), type.interestRate(), type.automaticValidation());
     }
 
     @Test

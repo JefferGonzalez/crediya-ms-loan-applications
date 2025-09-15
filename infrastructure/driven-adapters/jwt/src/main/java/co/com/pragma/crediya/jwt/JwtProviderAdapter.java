@@ -12,6 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -27,8 +29,9 @@ public class JwtProviderAdapter implements JwtProviderPort {
         String subject = extractSubject(claims);
         List<String> roles = extractRole(claims);
         String identificationNumber = extractIdentificationNumber(claims);
+        BigDecimal baseSalary = extractBaseSalary(claims);
 
-        return new Jwt(subject, roles, identificationNumber);
+        return new Jwt(subject, roles, identificationNumber, baseSalary);
     }
 
     private SecretKey getSecretKey() {
@@ -48,11 +51,18 @@ public class JwtProviderAdapter implements JwtProviderPort {
 
     @SuppressWarnings("unchecked")
     private List<String> extractRole(Claims claims) {
-        return (List<String>) claims.get(UserFieldNames.ROLES);
+        Object value = claims.get(UserFieldNames.ROLES);
+        return value != null ? (List<String>) value : Collections.emptyList();
     }
 
     private String extractIdentificationNumber(Claims claims) {
-        return claims.get(UserFieldNames.IDENTIFICATION_NUMBER).toString();
+        Object value = claims.get(UserFieldNames.IDENTIFICATION_NUMBER);
+        return value != null ? value.toString() : "";
+    }
+
+    private BigDecimal extractBaseSalary(Claims claims) {
+        Object value = claims.get(UserFieldNames.BASE_SALARY);
+        return value != null ? new BigDecimal(value.toString()) : BigDecimal.ZERO;
     }
 
     private String extractSubject(Claims claims) {

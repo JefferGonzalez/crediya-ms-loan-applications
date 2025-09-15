@@ -42,7 +42,7 @@ class LoanApplicationRestMapperTest {
 
     @Test
     void toResponse_shouldMapApplicationToLoanApplicationResponse() {
-        Type type = new Type(null, DomainConstants.MICROCREDIT, null, null, null, null);
+        Type type = new Type(null, DomainConstants.MICROCREDIT, null, null, 0, 0, null, null);
         Status status = new Status(null, "APPROVED", null);
         Application application = new Application(UUID.randomUUID(), BigDecimal.valueOf(1000.50), 12, "123456", "jonhdoe@example.com", type, status);
 

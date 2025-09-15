@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Loan Status Update</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .status-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .status-message {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        ul {
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Crediya 💜 | Loan Status Update</h1>
+    <p>Hello,</p>
+
+    <div class="status-box">
+        <p class="status-message">Your loan application has been {{status}}.</p>
+    </div>
+
+    <p>Here are the details of your application:</p>
+    <ul>
+        <li><strong>Loan Type:</strong> <span>{{loanType}}</span></li>
+        <li><strong>Amount:</strong> <span>{{amount}}</span></li>
+    </ul>
+
+    <p>
+        If you have any questions about your application status, please don't hesitate to contact our support team.
+    </p>
+
+    <p>
+        Thank you for choosing Crediya!
+    </p>
+</body>
+
+</html>

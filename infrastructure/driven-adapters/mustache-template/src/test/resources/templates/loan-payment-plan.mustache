@@ -1,0 +1,28 @@
+<html>
+<body>
+    <h1>Payment plan approved</h1>
+    <p>Loan Type: {{loanType}}</p>
+    <p>Amount: {{amount}}</p>
+    <p>Term: {{term}} months</p>
+    <p>Interest Rate: {{interestRate}}%</p>
+    <p>Installment: {{monthlyPayment}}</p>
+    <table>
+        <tr>
+            <th>Month</th>
+            <th>Installment</th>
+            <th>Principal</th>
+            <th>Interest</th>
+            <th>Balance</th>
+        </tr>
+        {{#paymentDetail}}
+            <tr>
+                <td>{{month}}</td>
+                <td>{{installment}}</td>
+                <td>{{principal}}</td>
+                <td>{{interest}}</td>
+                <td>{{balance}}</td>
+            </tr>
+        {{/paymentDetail}}
+    </table>
+</body>
+</html>

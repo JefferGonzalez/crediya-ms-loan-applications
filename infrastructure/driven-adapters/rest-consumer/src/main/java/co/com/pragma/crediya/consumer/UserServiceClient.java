@@ -31,7 +31,6 @@ public class UserServiceClient implements UserPort {
     public Mono<List<User>> getUsersByEmails(Set<String> emails) {
         EmailsRequest request = new EmailsRequest(new ArrayList<>(emails));
 
-
         return webClient
                 .post()
                 .uri("/api/v1/users/search")

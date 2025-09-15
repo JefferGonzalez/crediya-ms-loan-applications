@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 @Builder
 public class UserResponse {
 
+    private String identificationNumber;
+
     private String email;
 
     private BigDecimal baseSalary;

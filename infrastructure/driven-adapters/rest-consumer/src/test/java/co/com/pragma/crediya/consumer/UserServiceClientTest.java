@@ -63,8 +63,8 @@ class UserServiceClientTest {
 
     @Test
     void getUsersByEmails_shouldReturnMappedUsers() throws JsonProcessingException {
-        UserResponse john = new UserResponse("john@example.com", BigDecimal.valueOf(10000));
-        UserResponse jane = new UserResponse("jane@example.com", BigDecimal.valueOf(20000));
+        UserResponse john = new UserResponse(null,"john@example.com", BigDecimal.valueOf(10000));
+        UserResponse jane = new UserResponse(null, "jane@example.com", BigDecimal.valueOf(20000));
 
         mockWebServer.enqueue(new MockResponse()
                 .setBody(objectMapper.writeValueAsString(List.of(john, jane)))

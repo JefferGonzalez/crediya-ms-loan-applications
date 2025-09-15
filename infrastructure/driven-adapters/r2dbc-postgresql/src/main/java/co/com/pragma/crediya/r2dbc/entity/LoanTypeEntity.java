@@ -26,6 +26,10 @@ public class LoanTypeEntity {
 
     private BigDecimal maximumAmount;
 
+    private int minimumTerm;
+
+    private int maximumTerm;
+
     private BigDecimal interestRate;
 
     private Boolean automaticValidation;
