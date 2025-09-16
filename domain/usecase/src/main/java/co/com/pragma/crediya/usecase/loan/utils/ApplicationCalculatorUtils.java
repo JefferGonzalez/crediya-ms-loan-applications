@@ -11,6 +11,8 @@ public class ApplicationCalculatorUtils {
 
     private static final RoundingMode ROUNDING_MODE = RoundingMode.HALF_UP;
 
+    private static final BigDecimal MONTHS_IN_YEAR_PERCENT = BigDecimal.valueOf(1200);
+
     private ApplicationCalculatorUtils() {
     }
 
@@ -28,6 +30,10 @@ public class ApplicationCalculatorUtils {
         );
 
         return numerator.divide(denominator, RESULT_SCALE, ROUNDING_MODE);
+    }
+
+    public static BigDecimal annualToMonthlyRate(BigDecimal annualRate) {
+        return annualRate.divide(MONTHS_IN_YEAR_PERCENT, CALCULATION_SCALE, ROUNDING_MODE);
     }
 
 }

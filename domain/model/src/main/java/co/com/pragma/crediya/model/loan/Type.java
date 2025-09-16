@@ -8,6 +8,8 @@ public record Type(
         String name,
         BigDecimal minimumAmount,
         BigDecimal maximumAmount,
+        int minimumTerm,
+        int maximumTerm,
         BigDecimal interestRate,
         Boolean automaticValidation) {
 }

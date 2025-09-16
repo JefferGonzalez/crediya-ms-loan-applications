@@ -1,0 +1,7 @@
+dependencies {
+    implementation project(':model')
+    implementation 'org.springframework:spring-context'
+
+    // Mustache Template Engine
+    implementation 'com.github.spullara.mustache.java:compiler:0.9.14'
+}

@@ -1,5 +1,6 @@
 package co.com.pragma.crediya.model.loan.gateways;
 
+import co.com.pragma.crediya.model.loan.ActiveApplication;
 import co.com.pragma.crediya.model.loan.Application;
 import co.com.pragma.crediya.model.loan.report.ApplicationReport;
 import co.com.pragma.crediya.model.loan.report.LoanApplicationFilter;
@@ -21,5 +22,7 @@ public interface ApplicationRepository {
     Flux<ApplicationReport> findApplicationsReport(LoanApplicationFilter filter);
 
     Mono<Long> countLoanApplications(LoanApplicationFilter filter);
+
+    Flux<ActiveApplication> findActiveLoansByIdentificationNumber(String identificationNumber);
 
 }

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Loan Payment Plan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        ul {
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: right;
+        }
+
+        th {
+            background-color: #f5f5f5;
+        }
+
+        td:first-child,
+        th:first-child {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Crediya 💜 | Loan Payment Plan</h1>
+
+    <p>Hello,</p>
+    <p>The state of your loan application has been approved. Here are the details:</p>
+    <ul>
+        <li><strong>Loan Type:</strong> <span>{{loanType}}</span></li>
+        <li><strong>Amount:</strong> <span>{{amount}}</span></li>
+        <li><strong>Term:</strong> <span>{{term}} months</span></li>
+        <li><strong>Interest Rate:</strong> <span>{{interestRate}}%</span></li>
+    </ul>
+
+    <p>
+        Your fixed monthly installment is <strong>{{monthlyPayment}}</strong> for <strong>{{term}}</strong> months.
+        Below is the breakdown of each payment into principal and interest:
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Installment</th>
+                <th>Principal</th>
+                <th>Interest</th>
+                <th>Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#paymentDetail}}
+                <tr>
+                    <td>{{month}}</td>
+                    <td>{{installment}}</td>
+                    <td>{{principal}}</td>
+                    <td>{{interest}}</td>
+                    <td>{{balance}}</td>
+                </tr>
+            {{/paymentDetail}}
+        </tbody>
+    </table>
+
+    <p>
+        Thank you for choosing Crediya! Please ensure timely payments to maintain a good credit standing.
+        If you have any questions about your loan plan, feel free to contact our support team.
+    </p>
+</body>
+
+</html>

@@ -23,6 +23,4 @@ public final class ApplicationConstants {
 
     public static final String LOAN_STATUS_UPDATE_SUBJECT = "Loan Application Status Update";
 
-    public static final String LOAN_STATUS_UPDATE_BODY_TEMPLATE = "Your loan application has been %s.";
-
 }

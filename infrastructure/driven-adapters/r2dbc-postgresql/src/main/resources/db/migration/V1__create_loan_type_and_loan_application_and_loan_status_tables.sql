@@ -4,6 +4,8 @@ CREATE TABLE loan_type
     name                 VARCHAR(100) UNIQUE NOT NULL,
     minimum_amount       NUMERIC(15, 2)      NOT NULL,
     maximum_amount       NUMERIC(15, 2)      NOT NULL,
+    minimum_term         INT                 NOT NULL,
+    maximum_term         INT                 NOT NULL,
     interest_rate        NUMERIC(5, 2)       NOT NULL,
     automatic_validation BOOLEAN             NOT NULL DEFAULT FALSE
 );
@@ -26,13 +28,13 @@ CREATE TABLE loan_application
     status_id             UUID           NOT NULL
 );
 
-INSERT INTO loan_type (name, minimum_amount, maximum_amount, interest_rate, automatic_validation)
-VALUES ('PERSONAL LOAN', 500000, 100000000, 18.50, TRUE),
-       ('MORTGAGE LOAN', 30000000, 1000000000, 12.00, FALSE),
-       ('AUTO LOAN', 10000000, 200000000, 14.00, TRUE),
-       ('PERSONAL UNSECURED LOAN', 1000000, 80000000, 20.00, TRUE),
-       ('EDUCATION LOAN', 500000, 50000000, 10.50, TRUE),
-       ('MICROCREDIT', 300000, 50000000, 25.00, TRUE);
+INSERT INTO loan_type (name, minimum_amount, maximum_amount, minimum_term, maximum_term, interest_rate, automatic_validation)
+VALUES ('PERSONAL LOAN', 500000, 100000000, 24, 72, 18.50, TRUE),
+       ('MORTGAGE LOAN', 30000000, 1000000000, 120, 360, 12.00, FALSE),
+       ('AUTO LOAN', 10000000, 200000000, 24, 84,  14.00, TRUE),
+       ('PERSONAL UNSECURED LOAN', 1000000, 80000000, 12, 60, 20.00, TRUE),
+       ('EDUCATION LOAN', 500000, 50000000, 24, 180, 10.50, TRUE),
+       ('MICROCREDIT', 300000, 50000000, 12, 36, 25.00, TRUE);
 
 INSERT INTO loan_status (name, description)
 VALUES ('UNDER REVIEW', 'Application received, under evaluation'),

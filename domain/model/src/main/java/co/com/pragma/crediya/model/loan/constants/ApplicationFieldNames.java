@@ -9,6 +9,8 @@ public final class ApplicationFieldNames {
 
     public static final String AMOUNT = "amount";
 
+    public static final String TERM = "term";
+
     public static final String TYPE = "type";
 
     public static final String STATUS = "status";

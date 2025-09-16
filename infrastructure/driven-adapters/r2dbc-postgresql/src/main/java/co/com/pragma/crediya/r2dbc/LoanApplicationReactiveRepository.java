@@ -1,6 +1,7 @@
 package co.com.pragma.crediya.r2dbc;
 
 import co.com.pragma.crediya.r2dbc.entity.LoanApplicationEntity;
+import co.com.pragma.crediya.r2dbc.projection.LoanAmortizationProjection;
 import co.com.pragma.crediya.r2dbc.projection.LoanApplicationProjection;
 import co.com.pragma.crediya.r2dbc.reports.LoanApplicationCustomRepository;
 import org.springframework.data.r2dbc.repository.Query;
@@ -42,5 +43,17 @@ public interface LoanApplicationReactiveRepository
                 WHERE S.name IN ('UNDER REVIEW', 'MANUAL REVIEW', 'REJECTED')
             """)
     Mono<Long> countLoanApplications();
+
+    @Query("""
+            SELECT
+                LA.amount,
+                LA.term,
+                T.interest_rate
+            FROM loan_application AS LA
+            JOIN loan_type AS T ON T.id = LA.type_id
+            JOIN loan_status S ON LA.status_id = S.id AND S.name = 'APPROVED'
+            WHERE LA.identification_number = :identificationNumber
+            """)
+    Flux<LoanAmortizationProjection> queryActiveLoansByIdentificationNumber(String identificationNumber);
 
 }

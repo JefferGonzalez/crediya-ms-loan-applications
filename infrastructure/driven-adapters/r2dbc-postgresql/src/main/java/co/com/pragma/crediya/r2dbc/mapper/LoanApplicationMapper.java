@@ -1,8 +1,10 @@
 package co.com.pragma.crediya.r2dbc.mapper;
 
+import co.com.pragma.crediya.model.loan.ActiveApplication;
 import co.com.pragma.crediya.model.loan.Application;
 import co.com.pragma.crediya.model.loan.report.ApplicationReport;
 import co.com.pragma.crediya.r2dbc.entity.LoanApplicationEntity;
+import co.com.pragma.crediya.r2dbc.projection.LoanAmortizationProjection;
 import co.com.pragma.crediya.r2dbc.projection.LoanApplicationProjection;
 import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
@@ -16,6 +18,8 @@ public interface LoanApplicationMapper {
     Application toDomain(LoanApplicationEntity loanApplicationEntity);
 
     ApplicationReport toDomain(LoanApplicationProjection loanApplicationProjection);
+
+    ActiveApplication toDomain(LoanAmortizationProjection loanAmortizationProjection);
 
     @Mapping(source = "type.id", target = "typeId")
     @Mapping(source = "status.id", target = "statusId")
