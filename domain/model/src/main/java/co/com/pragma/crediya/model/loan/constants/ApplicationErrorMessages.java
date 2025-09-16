@@ -11,4 +11,6 @@ public final class ApplicationErrorMessages {
 
     public static final String STATUS_NOT_FOUND = "We couldn’t find the specified loan status.";
 
+    public static final String APPLICATION_BUSINESS_VALIDATION_FAILED = "Application business validation failed";
+
 }

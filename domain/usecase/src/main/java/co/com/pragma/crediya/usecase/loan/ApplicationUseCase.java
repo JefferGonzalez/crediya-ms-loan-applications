@@ -2,6 +2,7 @@ package co.com.pragma.crediya.usecase.loan;
 
 import co.com.pragma.crediya.model.StatusChange;
 import co.com.pragma.crediya.model.common.constants.DomainConstants;
+import co.com.pragma.crediya.model.common.validation.ValidationOutcome;
 import co.com.pragma.crediya.model.jwt.Jwt;
 import co.com.pragma.crediya.model.loan.*;
 import co.com.pragma.crediya.model.loan.constants.ApplicationConstants;
@@ -18,14 +19,17 @@ import co.com.pragma.crediya.model.notification.gateways.NotificationPort;
 import co.com.pragma.crediya.model.notification.gateways.NotificationRendererPort;
 import co.com.pragma.crediya.model.transaction.gateways.TransactionalPort;
 import co.com.pragma.crediya.usecase.loan.utils.ApplicationCalculatorUtils;
+import co.com.pragma.crediya.usecase.loan.validation.ValidationLoanApplicationOrchestrator;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 public record ApplicationUseCase(TypeRepository typeRepository,
                                  StatusRepository statusRepository,
                                  ApplicationRepository applicationRepository,
+                                 ValidationLoanApplicationOrchestrator validationLoanApplicationOrchestrator,
                                  NotificationPort notificationPort,
                                  NotificationRendererPort notificationRendererPort,
                                  LoanValidationPort loanValidationPort,
@@ -120,7 +124,7 @@ public record ApplicationUseCase(TypeRepository typeRepository,
 
                     Application applicationWithTypeAndStatus = buildApplicationWithTypeAndStatus(application, loanType, loanStatus);
 
-                    return validateLoanAmount(applicationWithTypeAndStatus)
+                    return validateApplicationBusinessRules(applicationWithTypeAndStatus)
                             .flatMap(this::saveApplication);
                 })
                 .as(transactionalPort::transactional)
@@ -228,16 +232,19 @@ public record ApplicationUseCase(TypeRepository typeRepository,
         );
     }
 
-    private Mono<Application> validateLoanAmount(Application application) {
-        BigDecimal amount = application.amount();
-        BigDecimal minValue = application.type().minimumAmount();
-        BigDecimal maxValue = application.type().maximumAmount();
+    private Mono<Application> validateApplicationBusinessRules(Application application) {
+        return validationLoanApplicationOrchestrator.validateApplicationBusinessRules(application)
+                .flatMap(outcomes -> {
+                    List<ValidationOutcome> errors = outcomes.stream()
+                            .filter(outcome -> !outcome.isValid())
+                            .toList();
 
-        if (amount.compareTo(minValue) < 0 || amount.compareTo(maxValue) > 0) {
-            return Mono.error(new ApplicationValueOutOfBoundsException(minValue, maxValue));
-        }
+                    if (!errors.isEmpty()) {
+                        return Mono.error(new ApplicationBusinessValidationException(errors));
+                    }
 
-        return Mono.just(application);
+                    return Mono.just(application);
+                });
     }
 
     private boolean isValidStatusTransition(String newStatus) {

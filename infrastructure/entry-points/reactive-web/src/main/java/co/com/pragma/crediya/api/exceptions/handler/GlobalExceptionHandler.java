@@ -3,9 +3,9 @@ package co.com.pragma.crediya.api.exceptions.handler;
 import co.com.pragma.crediya.api.constants.HttpErrorTitles;
 import co.com.pragma.crediya.api.exceptions.*;
 import co.com.pragma.crediya.model.loan.constants.ApplicationFieldNames;
+import co.com.pragma.crediya.model.loan.exceptions.ApplicationBusinessValidationException;
 import co.com.pragma.crediya.model.loan.exceptions.ApplicationCannotBeProcessedException;
 import co.com.pragma.crediya.model.loan.exceptions.ApplicationNotFoundException;
-import co.com.pragma.crediya.model.loan.exceptions.ApplicationValueOutOfBoundsException;
 import co.com.pragma.crediya.model.loan.exceptions.TypeNotFoundException;
 import co.com.pragma.crediya.model.user.exceptions.UserDataInconsistencyException;
 import co.com.pragma.crediya.model.user.exceptions.UserGatewayException;
@@ -74,11 +74,6 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
             return ProblemDetails.badRequest(HttpErrorTitles.BAD_REQUEST, ex.getMessage());
         }
 
-        if (ex instanceof ApplicationValueOutOfBoundsException) {
-            List<FieldValidationError> errors = List.of(new FieldValidationError(ApplicationFieldNames.AMOUNT, ex.getMessage()));
-            return ProblemDetails.badRequest(HttpErrorTitles.BAD_REQUEST, errors);
-        }
-
         if (ex instanceof ApplicationCannotBeProcessedException) {
             List<FieldValidationError> errors = List.of(new FieldValidationError(ApplicationFieldNames.STATUS, ex.getMessage()));
             return ProblemDetails.badRequest(HttpErrorTitles.BAD_REQUEST, errors);
@@ -86,6 +81,15 @@ public class GlobalExceptionHandler implements ErrorWebExceptionHandler {
 
         if (ex instanceof TypeNotFoundException) {
             List<FieldValidationError> errors = List.of(new FieldValidationError(ApplicationFieldNames.TYPE, ex.getMessage()));
+            return ProblemDetails.badRequest(HttpErrorTitles.BAD_REQUEST, errors);
+        }
+
+        if (ex instanceof ApplicationBusinessValidationException exs) {
+            List<FieldValidationError> errors = exs.getErrors().stream()
+                    .filter(result -> !result.isValid())
+                    .map(result -> new FieldValidationError(result.field(), result.errorMessage()))
+                    .toList();
+
             return ProblemDetails.badRequest(HttpErrorTitles.BAD_REQUEST, errors);
         }
 

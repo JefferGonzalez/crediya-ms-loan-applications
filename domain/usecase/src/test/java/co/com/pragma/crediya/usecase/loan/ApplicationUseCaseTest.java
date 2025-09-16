@@ -2,9 +2,12 @@ package co.com.pragma.crediya.usecase.loan;
 
 import co.com.pragma.crediya.model.StatusChange;
 import co.com.pragma.crediya.model.common.constants.DomainConstants;
+import co.com.pragma.crediya.model.common.validation.ValidationOutcome;
 import co.com.pragma.crediya.model.jwt.Jwt;
 import co.com.pragma.crediya.model.loan.*;
 import co.com.pragma.crediya.model.loan.constants.ApplicationConstants;
+import co.com.pragma.crediya.model.loan.constants.ApplicationErrorMessages;
+import co.com.pragma.crediya.model.loan.constants.ApplicationFieldNames;
 import co.com.pragma.crediya.model.loan.exceptions.*;
 import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
 import co.com.pragma.crediya.model.loan.gateways.LoanValidationPort;
@@ -17,6 +20,7 @@ import co.com.pragma.crediya.model.notification.gateways.NotificationPort;
 import co.com.pragma.crediya.model.notification.gateways.NotificationRendererPort;
 import co.com.pragma.crediya.model.transaction.gateways.TransactionalPort;
 import co.com.pragma.crediya.model.user.User;
+import co.com.pragma.crediya.usecase.loan.validation.ValidationLoanApplicationOrchestrator;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +53,9 @@ class ApplicationUseCaseTest {
     private ApplicationRepository applicationRepository;
 
     @Mock
+    private ValidationLoanApplicationOrchestrator validationLoanApplicationOrchestrator;
+
+    @Mock
     private NotificationPort notificationPort;
 
     @Mock
@@ -74,9 +81,13 @@ class ApplicationUseCaseTest {
 
     private Status status;
 
+    private List<ValidationOutcome> amountErrorValidations;
+
+    private List<ValidationOutcome> termErrorValidations;
+
     @BeforeEach
     void setUp() {
-        useCase = new ApplicationUseCase(typeRepository, statusRepository, applicationRepository, notificationPort, notificationRendererPort, loanValidationPort, logger, transactionalPort);
+        useCase = new ApplicationUseCase(typeRepository, statusRepository, applicationRepository, validationLoanApplicationOrchestrator, notificationPort, notificationRendererPort, loanValidationPort, logger, transactionalPort);
 
         User loggedUser = new User("1234567890", "jhondoe@example.com", BigDecimal.valueOf(1200000));
 
@@ -86,11 +97,29 @@ class ApplicationUseCaseTest {
 
         application = new Application(UUID.randomUUID(), BigDecimal.valueOf(4000000), 12, loggedUser.identificationNumber(), loggedUser.email(), type, status);
 
+        List<ValidationOutcome> successfulValidations = List.of(
+                ValidationOutcome.success(ApplicationFieldNames.AMOUNT),
+                ValidationOutcome.success(ApplicationFieldNames.TERM)
+        );
+
+        amountErrorValidations = List.of(
+                ValidationOutcome.error(ApplicationFieldNames.AMOUNT, "amount most be between 10.000.000,00 and 20.000.000,00"),
+                ValidationOutcome.success(ApplicationFieldNames.TERM)
+        );
+
+        termErrorValidations = List.of(
+                ValidationOutcome.success(ApplicationFieldNames.AMOUNT),
+                ValidationOutcome.error(ApplicationFieldNames.TERM, "term most be between  and ")
+        );
+
         lenient().when(transactionalPort.transactional(any(Mono.class))).then(returnsFirstArg());
 
         lenient().when(mockJwt.subject()).thenReturn(loggedUser.email());
 
         lenient().when(mockJwt.identificationNumber()).thenReturn(loggedUser.identificationNumber());
+
+        lenient().when(validationLoanApplicationOrchestrator.validateApplicationBusinessRules(any(Application.class)))
+                .thenReturn(Mono.just(successfulValidations));
 
         lenient().when(applicationRepository.findActiveLoansByIdentificationNumber(application.identificationNumber()))
                 .thenReturn(Flux.empty());
@@ -180,10 +209,43 @@ class ApplicationUseCaseTest {
 
         when(statusRepository.findByName(DomainConstants.DEFAULT_PENDING_STATUS)).thenReturn(Mono.just(status));
 
+        when(validationLoanApplicationOrchestrator.validateApplicationBusinessRules(any(Application.class)))
+                .thenReturn(Mono.just(amountErrorValidations));
+
         StepVerifier.create(useCase.save(application, mockJwt))
                 .expectErrorSatisfies(error -> assertThat(error)
-                        .isInstanceOf(ApplicationValueOutOfBoundsException.class)
-                        .hasMessage("amount most be between 10.000.000,00 and 20.000.000,00"))
+                        .isInstanceOf(ApplicationBusinessValidationException.class)
+                        .hasMessage(ApplicationErrorMessages.APPLICATION_BUSINESS_VALIDATION_FAILED))
+                .verify();
+
+        verify(typeRepository).findByName(DomainConstants.MICROCREDIT);
+
+        verify(statusRepository).findByName(DomainConstants.DEFAULT_PENDING_STATUS);
+    }
+
+    @Test
+    void saveApplicationFailsWhenTermOutOfRange() {
+        Type restrictedType = new Type(
+                UUID.randomUUID(),
+                DomainConstants.MICROCREDIT,
+                BigDecimal.valueOf(300000),
+                BigDecimal.valueOf(50000000),
+                24,
+                84,
+                BigDecimal.valueOf(25.00),
+                true
+        );
+        when(typeRepository.findByName(DomainConstants.MICROCREDIT)).thenReturn(Mono.just(restrictedType));
+
+        when(statusRepository.findByName(DomainConstants.DEFAULT_PENDING_STATUS)).thenReturn(Mono.just(status));
+
+        when(validationLoanApplicationOrchestrator.validateApplicationBusinessRules(any(Application.class)))
+                .thenReturn(Mono.just(termErrorValidations));
+
+        StepVerifier.create(useCase.save(application, mockJwt))
+                .expectErrorSatisfies(error -> assertThat(error)
+                        .isInstanceOf(ApplicationBusinessValidationException.class)
+                        .hasMessage(ApplicationErrorMessages.APPLICATION_BUSINESS_VALIDATION_FAILED))
                 .verify();
 
         verify(typeRepository).findByName(DomainConstants.MICROCREDIT);

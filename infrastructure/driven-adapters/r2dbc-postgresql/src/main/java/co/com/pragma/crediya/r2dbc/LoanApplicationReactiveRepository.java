@@ -56,5 +56,4 @@ public interface LoanApplicationReactiveRepository
             """)
     Flux<LoanAmortizationProjection> queryActiveLoansByIdentificationNumber(String identificationNumber);
 
-
 }
