@@ -9,4 +9,6 @@ public final class ErrorMessages {
 
     public static final String FAILED_TO_SERIALIZE_APPLICATION_RISK_EVALUATION = "Failed to serialize ApplicationRiskEvaluation";
 
+    public static final String FAILED_TO_SERIALIZE_LOAN_APPROVED_EVENT = "Failed to serialize LoanApprovedEvent";
+
 }

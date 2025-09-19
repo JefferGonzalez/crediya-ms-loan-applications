@@ -2,6 +2,7 @@ package co.com.pragma.crediya.sqs.sender;
 
 import co.com.pragma.crediya.model.common.constants.DomainConstants;
 import co.com.pragma.crediya.model.loan.ApplicationRiskEvaluation;
+import co.com.pragma.crediya.model.loan.ApprovedApplication;
 import co.com.pragma.crediya.model.notification.NotificationMessage;
 import co.com.pragma.crediya.sqs.sender.config.SQSSenderProperties;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -18,6 +19,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -46,6 +48,8 @@ class SQSSenderTest {
 
     private static final String LOAN_AUTO_VALIDATION_QUEUE_NAME = "LoanAutoValidation";
 
+    private static final String LOAN_APPROVED_EVENTS_QUEUE_NAME = "LoanApprovedEvents";
+
     private static final String EMAIL_TO = "jhondoe@example.com";
 
     private static final String SUBJECT = "Subject";
@@ -62,7 +66,7 @@ class SQSSenderTest {
     }
 
     @Test
-    void sendNotification_successful() throws JsonProcessingException {
+    void sendNotificationSuccessful() throws JsonProcessingException {
         when(properties.queueUrl()).thenReturn(QUEUE_URL);
         when(properties.loanNotificationQueueName()).thenReturn(LOAN_NOTIFICATION_QUEUE_NAME);
 
@@ -88,8 +92,8 @@ class SQSSenderTest {
     }
 
     @Test
-    void validateLoanAutomatically_successful() throws JsonProcessingException {
-        UUID applicationId  = UUID.randomUUID();
+    void validateLoanAutomaticallySuccessful() throws JsonProcessingException {
+        UUID applicationId = UUID.randomUUID();
         ApplicationRiskEvaluation evaluation = new ApplicationRiskEvaluation(
                 applicationId,
                 DomainConstants.MICROCREDIT,
@@ -120,6 +124,33 @@ class SQSSenderTest {
 
         SendMessageRequest captured = captor.getValue();
         assertThat(captured.queueUrl()).isEqualTo(QUEUE_URL + LOAN_AUTO_VALIDATION_QUEUE_NAME);
+        assertThat(captured.messageBody()).isEqualTo(expectedJson);
+    }
+
+    @Test
+    void sendLoanApprovedEventSuccessful() throws JsonProcessingException {
+        ApprovedApplication approvedApplication = new ApprovedApplication(UUID.randomUUID(), OffsetDateTime.now());
+
+        when(properties.queueUrl()).thenReturn(QUEUE_URL);
+        when(properties.loanApprovedEventsQueueName()).thenReturn(LOAN_APPROVED_EVENTS_QUEUE_NAME);
+
+        SendMessageResponse response = SendMessageResponse.builder()
+                .messageId(MESSAGE_ID)
+                .build();
+
+        when(client.sendMessage(any(SendMessageRequest.class)))
+                .thenReturn(CompletableFuture.completedFuture(response));
+
+        String expectedJson = "{\"id\":\"" + approvedApplication.id() + "\",\"approvedAt\":\"" + approvedApplication.approvedAt().toString() + "\"}";
+        when(objectMapper.writeValueAsString(approvedApplication)).thenReturn(expectedJson);
+
+        sender.sendLoanApprovedEvent(approvedApplication).block();
+
+        ArgumentCaptor<SendMessageRequest> captor = ArgumentCaptor.forClass(SendMessageRequest.class);
+        verify(client).sendMessage(captor.capture());
+
+        SendMessageRequest captured = captor.getValue();
+        assertThat(captured.queueUrl()).isEqualTo(QUEUE_URL + LOAN_APPROVED_EVENTS_QUEUE_NAME);
         assertThat(captured.messageBody()).isEqualTo(expectedJson);
     }
 

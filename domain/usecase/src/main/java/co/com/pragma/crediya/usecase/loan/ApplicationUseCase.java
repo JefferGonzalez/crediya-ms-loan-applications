@@ -8,10 +8,7 @@ import co.com.pragma.crediya.model.loan.*;
 import co.com.pragma.crediya.model.loan.constants.ApplicationConstants;
 import co.com.pragma.crediya.model.loan.constants.ApplicationErrorMessages;
 import co.com.pragma.crediya.model.loan.exceptions.*;
-import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
-import co.com.pragma.crediya.model.loan.gateways.LoanValidationPort;
-import co.com.pragma.crediya.model.loan.gateways.StatusRepository;
-import co.com.pragma.crediya.model.loan.gateways.TypeRepository;
+import co.com.pragma.crediya.model.loan.gateways.*;
 import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
 import co.com.pragma.crediya.model.notification.LoanApproval;
 import co.com.pragma.crediya.model.notification.NotificationMessage;
@@ -23,6 +20,7 @@ import co.com.pragma.crediya.usecase.loan.validation.ValidationLoanApplicationOr
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,9 +28,10 @@ public record ApplicationUseCase(TypeRepository typeRepository,
                                  StatusRepository statusRepository,
                                  ApplicationRepository applicationRepository,
                                  ValidationLoanApplicationOrchestrator validationLoanApplicationOrchestrator,
+                                 LoanValidationPort loanValidationPort,
+                                 LoanApprovedEventPort loanApprovedEventPort,
                                  NotificationPort notificationPort,
                                  NotificationRendererPort notificationRendererPort,
-                                 LoanValidationPort loanValidationPort,
                                  LoggerPort logger,
                                  TransactionalPort transactionalPort) {
 
@@ -79,9 +78,18 @@ public record ApplicationUseCase(TypeRepository typeRepository,
                 })
                 .flatMap(this::saveApplication)
                 .as(transactionalPort::transactional)
-                .flatMap(storedApplication ->
-                        sendStatusNotification(storedApplication, storedApplication.status().name())
-                                .thenReturn(storedApplication)
+                .flatMap(storedApplication -> {
+                            if (DomainConstants.APPROVED_STATUS.equalsIgnoreCase(storedApplication.status().name())) {
+                                ApprovedApplication approvedApplication = new ApprovedApplication(storedApplication.id(), OffsetDateTime.now());
+
+                                return loanApprovedEventPort.sendLoanApprovedEvent(approvedApplication)
+                                        .then(sendStatusNotification(storedApplication, storedApplication.status().name()))
+                                        .thenReturn(storedApplication);
+                            }
+
+                            return sendStatusNotification(storedApplication, storedApplication.status().name())
+                                    .thenReturn(storedApplication);
+                        }
                 )
                 .doOnSuccess(storedApplication -> logger.info("Loan application with ID {} updated successfully.", storedApplication.id()))
                 .doOnError(e -> logger.error("Failed to update loan application with ID {}. Reason: {}", id, e.getMessage(), e));
@@ -103,8 +111,11 @@ public record ApplicationUseCase(TypeRepository typeRepository,
                 .flatMap(storedApplication -> {
                     logger.info("Application with ID {} updated to status {}", storedApplication.id(), result.status());
 
-                    if (result.status().equalsIgnoreCase(DomainConstants.APPROVED_STATUS)) {
-                        return sendApprovalNotification(storedApplication, result);
+                    if (DomainConstants.APPROVED_STATUS.equalsIgnoreCase(result.status())) {
+                        ApprovedApplication approvedApplication = new ApprovedApplication(storedApplication.id(), OffsetDateTime.now());
+
+                        return loanApprovedEventPort.sendLoanApprovedEvent(approvedApplication)
+                                .then(sendApprovalNotification(storedApplication, result));
                     }
 
                     return sendStatusNotification(storedApplication, result.status());

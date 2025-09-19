@@ -9,10 +9,7 @@ import co.com.pragma.crediya.model.loan.constants.ApplicationConstants;
 import co.com.pragma.crediya.model.loan.constants.ApplicationErrorMessages;
 import co.com.pragma.crediya.model.loan.constants.ApplicationFieldNames;
 import co.com.pragma.crediya.model.loan.exceptions.*;
-import co.com.pragma.crediya.model.loan.gateways.ApplicationRepository;
-import co.com.pragma.crediya.model.loan.gateways.LoanValidationPort;
-import co.com.pragma.crediya.model.loan.gateways.StatusRepository;
-import co.com.pragma.crediya.model.loan.gateways.TypeRepository;
+import co.com.pragma.crediya.model.loan.gateways.*;
 import co.com.pragma.crediya.model.logs.gateways.LoggerPort;
 import co.com.pragma.crediya.model.notification.LoanApproval;
 import co.com.pragma.crediya.model.notification.NotificationMessage;
@@ -56,13 +53,16 @@ class ApplicationUseCaseTest {
     private ValidationLoanApplicationOrchestrator validationLoanApplicationOrchestrator;
 
     @Mock
+    private LoanValidationPort loanValidationPort;
+
+    @Mock
+    private LoanApprovedEventPort loanApprovedEventPort;
+
+    @Mock
     private NotificationPort notificationPort;
 
     @Mock
     private NotificationRendererPort notificationRendererPort;
-
-    @Mock
-    LoanValidationPort loanValidationPort;
 
     @Mock
     private LoggerPort logger;
@@ -87,7 +87,9 @@ class ApplicationUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new ApplicationUseCase(typeRepository, statusRepository, applicationRepository, validationLoanApplicationOrchestrator, notificationPort, notificationRendererPort, loanValidationPort, logger, transactionalPort);
+        useCase = new ApplicationUseCase(
+                typeRepository, statusRepository, applicationRepository, validationLoanApplicationOrchestrator, loanValidationPort,
+                loanApprovedEventPort, notificationPort, notificationRendererPort, logger, transactionalPort);
 
         User loggedUser = new User("1234567890", "jhondoe@example.com", BigDecimal.valueOf(1200000));
 
@@ -270,6 +272,8 @@ class ApplicationUseCaseTest {
 
         when(applicationRepository.save(any(Application.class))).thenReturn(Mono.just(application));
 
+        when(loanApprovedEventPort.sendLoanApprovedEvent(any(ApprovedApplication.class))).thenReturn(Mono.empty());
+
         when(notificationPort.sendNotification(any(NotificationMessage.class))).thenReturn(Mono.empty());
 
         StepVerifier.create(useCase.processAndApproveOrReject(appId, newStatus))
@@ -395,6 +399,8 @@ class ApplicationUseCaseTest {
         when(typeRepository.findById(application.type().id())).thenReturn(Mono.just(type));
 
         when(applicationRepository.save(any(Application.class))).thenReturn(Mono.just(application));
+
+        when(loanApprovedEventPort.sendLoanApprovedEvent(any(ApprovedApplication.class))).thenReturn(Mono.empty());
 
         when(notificationPort.sendNotification(any(NotificationMessage.class))).thenReturn(Mono.empty());
 
