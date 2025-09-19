@@ -80,7 +80,8 @@ public record ApplicationUseCase(TypeRepository typeRepository,
                 .as(transactionalPort::transactional)
                 .flatMap(storedApplication -> {
                             if (DomainConstants.APPROVED_STATUS.equalsIgnoreCase(storedApplication.status().name())) {
-                                ApprovedApplication approvedApplication = new ApprovedApplication(storedApplication.id(), OffsetDateTime.now());
+                                ApprovedApplication approvedApplication = new ApprovedApplication(
+                                        storedApplication.id(), storedApplication.amount(), OffsetDateTime.now());
 
                                 return loanApprovedEventPort.sendLoanApprovedEvent(approvedApplication)
                                         .then(sendStatusNotification(storedApplication, storedApplication.status().name()))
@@ -112,7 +113,8 @@ public record ApplicationUseCase(TypeRepository typeRepository,
                     logger.info("Application with ID {} updated to status {}", storedApplication.id(), result.status());
 
                     if (DomainConstants.APPROVED_STATUS.equalsIgnoreCase(result.status())) {
-                        ApprovedApplication approvedApplication = new ApprovedApplication(storedApplication.id(), OffsetDateTime.now());
+                        ApprovedApplication approvedApplication = new ApprovedApplication(
+                                storedApplication.id(), storedApplication.amount(), OffsetDateTime.now());
 
                         return loanApprovedEventPort.sendLoanApprovedEvent(approvedApplication)
                                 .then(sendApprovalNotification(storedApplication, result));
