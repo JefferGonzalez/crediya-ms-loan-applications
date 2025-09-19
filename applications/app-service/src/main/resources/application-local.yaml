@@ -24,6 +24,7 @@ adapters:
     queueUrl: "${AWS_SQS_QUEUE_URL}"
     loanNotificationQueueName: "${AWS_SQS_LOAN_NOTIFICATION_QUEUE_NAME}"
     loanAutoValidationQueueName: "${AWS_SQS_LOAN_AUTO_VALIDATION_QUEUE_NAME}"
+    loanApprovedEventsQueueName: "${AWS_SQS_LOAN_APPROVED_EVENTS_QUEUE_NAME}"
 
 entrypoint:
   sqs:

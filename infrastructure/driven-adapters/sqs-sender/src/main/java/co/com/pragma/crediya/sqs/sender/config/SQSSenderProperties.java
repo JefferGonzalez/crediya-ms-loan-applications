@@ -7,5 +7,6 @@ public record SQSSenderProperties(
         String region,
         String queueUrl,
         String loanNotificationQueueName,
-        String loanAutoValidationQueueName) {
+        String loanAutoValidationQueueName,
+        String loanApprovedEventsQueueName) {
 }

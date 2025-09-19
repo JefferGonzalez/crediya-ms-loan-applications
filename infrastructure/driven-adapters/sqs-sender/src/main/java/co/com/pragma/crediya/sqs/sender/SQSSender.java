@@ -1,10 +1,13 @@
 package co.com.pragma.crediya.sqs.sender;
 
 import co.com.pragma.crediya.model.loan.ApplicationRiskEvaluation;
+import co.com.pragma.crediya.model.loan.ApprovedApplication;
+import co.com.pragma.crediya.model.loan.gateways.LoanApprovedEventPort;
 import co.com.pragma.crediya.model.loan.gateways.LoanValidationPort;
 import co.com.pragma.crediya.model.notification.NotificationMessage;
 import co.com.pragma.crediya.model.notification.gateways.NotificationPort;
 import co.com.pragma.crediya.sqs.sender.config.SQSSenderProperties;
+import co.com.pragma.crediya.sqs.sender.exceptions.LoanApprovedEventSerializationException;
 import co.com.pragma.crediya.sqs.sender.exceptions.LoanSerializationException;
 import co.com.pragma.crediya.sqs.sender.exceptions.NotificationSerializationException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -20,7 +23,7 @@ import software.amazon.awssdk.services.sqs.model.SendMessageResponse;
 @Service
 @Log4j2
 @RequiredArgsConstructor
-public class SQSSender implements NotificationPort, LoanValidationPort {
+public class SQSSender implements NotificationPort, LoanValidationPort, LoanApprovedEventPort {
 
     private final SQSSenderProperties properties;
 
@@ -51,8 +54,22 @@ public class SQSSender implements NotificationPort, LoanValidationPort {
         return Mono.fromCallable(() -> objectMapper.writeValueAsString(applicationRiskEvaluation))
                 .onErrorMap(JsonProcessingException.class, e -> new LoanSerializationException())
                 .flatMap(json -> send(json, queueUrl))
-                .doOnSuccess(messageId -> log.info("Loan validation queued successfully with Message ID: {}", messageId))
-                .doOnError(error -> log.error("Failed to send loan validation to SQS. Error: {}", error.getMessage()))
+                .doOnSuccess(messageId -> log.info("Loan validation for application [{}] queued successfully with Message ID: {}", applicationRiskEvaluation.id(), messageId))
+                .doOnError(error -> log.error("Failed to send loan validation to SQS for application [{}]. Error: {}", applicationRiskEvaluation.id(), error.getMessage()))
+                .then();
+    }
+
+    @Override
+    public Mono<Void> sendLoanApprovedEvent(ApprovedApplication approvedApplication) {
+        log.info("Sending loan approved event to SQS for application [{}] : {}", approvedApplication.id(), approvedApplication);
+
+        String queueUrl = properties.queueUrl() + properties.loanApprovedEventsQueueName();
+
+        return Mono.fromCallable(() -> objectMapper.writeValueAsString(approvedApplication))
+                .onErrorMap(JsonProcessingException.class, e -> new LoanApprovedEventSerializationException())
+                .flatMap(json -> send(json, queueUrl))
+                .doOnSuccess(messageId -> log.info("Loan approved event for application [{}] queued successfully with Message ID: {}", approvedApplication.id(), messageId))
+                .doOnError(error -> log.error("Failed to send loan approved event to SQS for application [{}]. Error: {}", approvedApplication.id(), error.getMessage()))
                 .then();
     }
 
