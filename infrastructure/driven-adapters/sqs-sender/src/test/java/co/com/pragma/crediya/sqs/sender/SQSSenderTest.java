@@ -129,7 +129,7 @@ class SQSSenderTest {
 
     @Test
     void sendLoanApprovedEventSuccessful() throws JsonProcessingException {
-        ApprovedApplication approvedApplication = new ApprovedApplication(UUID.randomUUID(), OffsetDateTime.now());
+        ApprovedApplication approvedApplication = new ApprovedApplication(UUID.randomUUID(), BigDecimal.valueOf(1500), OffsetDateTime.now());
 
         when(properties.queueUrl()).thenReturn(QUEUE_URL);
         when(properties.loanApprovedEventsQueueName()).thenReturn(LOAN_APPROVED_EVENTS_QUEUE_NAME);
@@ -141,7 +141,9 @@ class SQSSenderTest {
         when(client.sendMessage(any(SendMessageRequest.class)))
                 .thenReturn(CompletableFuture.completedFuture(response));
 
-        String expectedJson = "{\"id\":\"" + approvedApplication.id() + "\",\"approvedAt\":\"" + approvedApplication.approvedAt().toString() + "\"}";
+        String expectedJson = "{\"id\":\"" + approvedApplication.id() + ",\"amount\":" + approvedApplication.amount()
+                + ",\"approvedAt\":\"" + approvedApplication.approvedAt().toString() + "\"}";
+
         when(objectMapper.writeValueAsString(approvedApplication)).thenReturn(expectedJson);
 
         sender.sendLoanApprovedEvent(approvedApplication).block();
