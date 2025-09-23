@@ -6,41 +6,24 @@ spring:
     default-schema: "${R2DBC_SCHEMA}"
     locations: classpath:db/migration
 
-adapters:
-  r2dbc:
-    host: "${R2DBC_HOST}"
-    port: "${R2DBC_PORT}"
-    database: "${R2DBC_DATABASE}"
-    schema: "${R2DBC_SCHEMA}"
-    username: "${R2DBC_USERNAME}"
-    password: "${R2DBC_PASSWORD}"
+aws:
+  region: "${AWS_REGION}"
+  rds:
+    postgres:
+      secretName: "${AWS_RDS_POSTGRES_SECRET_NAME}"
+  jwt:
+    secretName: "${AWS_JWT_SECRET_NAME}"
+  sqs:
+    sender:
+      secretName: "${AWS_SQS_SENDER_SECRET_NAME}"
+    listener:
+      secretName: "${AWS_SQS_LISTENER_SECRET_NAME}"
 
+adapters:
   rest-consumer:
     timeout: 5000
     url: "${AUTH_MICROSERVICE_URL}"
 
-  sqs:
-    region: "${AWS_SQS_REGION}"
-    queueUrl: "${AWS_SQS_QUEUE_URL}"
-    loanNotificationQueueName: "${AWS_SQS_LOAN_NOTIFICATION_QUEUE_NAME}"
-    loanAutoValidationQueueName: "${AWS_SQS_LOAN_AUTO_VALIDATION_QUEUE_NAME}"
-
-entrypoint:
-  sqs:
-    region: "${AWS_SQS_REGION}"
-    queueUrl: "${AWS_SQS_QUEUE_URL}"
-    loanValidationResponseQueueName: "${AWS_SQS_LOAN_VALIDATION_RESPONSE_QUEUE_NAME}"
-    waitTimeSeconds: 20
-    maxNumberOfMessages: 10
-    visibilityTimeoutSeconds: 10
-    numberOfThreads: 1
-
-application:
-  security:
-    jwt:
-      expiration: 1800000
-      secret-key: "${JWT_SECRET_KEY}"
-
 logging:
   level:
-    root: WARN
+    root: INFO

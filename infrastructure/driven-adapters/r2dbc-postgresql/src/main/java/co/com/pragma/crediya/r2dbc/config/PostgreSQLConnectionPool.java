@@ -18,8 +18,6 @@ public class PostgreSQLConnectionPool {
 
     public static final int MAX_IDLE_TIME = 30;
 
-    public static final int DEFAULT_PORT = 5432;
-
     @Bean
     public ConnectionPool getConnectionConfig(PostgresqlConnectionProperties properties) {
         PostgresqlConnectionConfiguration dbConfiguration = PostgresqlConnectionConfiguration.builder()
@@ -29,6 +27,7 @@ public class PostgreSQLConnectionPool {
                 .schema(properties.schema())
                 .username(properties.username())
                 .password(properties.password())
+                .sslMode(properties.sslMode())
                 .build();
 
         ConnectionPoolConfiguration poolConfiguration = ConnectionPoolConfiguration.builder()
@@ -42,4 +41,5 @@ public class PostgreSQLConnectionPool {
 
         return new ConnectionPool(poolConfiguration);
     }
+
 }
