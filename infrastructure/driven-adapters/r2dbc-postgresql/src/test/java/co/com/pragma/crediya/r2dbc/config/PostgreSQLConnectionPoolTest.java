@@ -1,5 +1,6 @@
 package co.com.pragma.crediya.r2dbc.config;
 
+import io.r2dbc.postgresql.client.SSLMode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -28,10 +29,12 @@ class PostgreSQLConnectionPoolTest {
         when(properties.schema()).thenReturn("schema");
         when(properties.username()).thenReturn("username");
         when(properties.password()).thenReturn("password");
+        when(properties.sslMode()).thenReturn(SSLMode.DISABLE);
     }
 
     @Test
     void getConnectionConfigSuccess() {
         assertNotNull(connectionPool.getConnectionConfig(properties));
     }
+
 }
