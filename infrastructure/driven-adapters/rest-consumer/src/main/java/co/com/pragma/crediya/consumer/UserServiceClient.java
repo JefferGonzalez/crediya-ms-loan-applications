@@ -33,7 +33,7 @@ public class UserServiceClient implements UserPort {
 
         return webClient
                 .post()
-                .uri("/api/v1/users/search")
+                .uri("/auth/users/search")
                 .bodyValue(request)
                 .retrieve()
                 .onStatus(

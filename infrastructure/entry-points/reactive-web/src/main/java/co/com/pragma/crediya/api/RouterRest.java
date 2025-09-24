@@ -31,7 +31,7 @@ public class RouterRest {
     @Bean
     @RouterOperations({
             @RouterOperation(
-                    path = ApiConstants.LOAN_APPLICATIONS_PATH,
+                    path = ApiConstants.BASE_PATH,
                     produces = {MediaType.APPLICATION_JSON_VALUE},
                     method = RequestMethod.GET,
                     beanClass = LoanApplicationHandler.class,
@@ -72,7 +72,7 @@ public class RouterRest {
                     )
             ),
             @RouterOperation(
-                    path = ApiConstants.LOAN_APPLICATIONS_PATH,
+                    path = ApiConstants.BASE_PATH,
                     produces = {MediaType.APPLICATION_JSON_VALUE},
                     method = RequestMethod.POST,
                     beanClass = LoanApplicationHandler.class,
@@ -156,8 +156,8 @@ public class RouterRest {
     })
     public RouterFunction<ServerResponse> routerFunction(LoanApplicationHandler handler) {
         return RouterFunctions.route()
-                .GET(ApiConstants.LOAN_APPLICATIONS_PATH, handler::getReport)
-                .POST(ApiConstants.LOAN_APPLICATIONS_PATH, handler::createLoanApplication)
+                .GET(ApiConstants.BASE_PATH, handler::getReport)
+                .POST(ApiConstants.BASE_PATH, handler::createLoanApplication)
                 .PATCH(ApiConstants.UPDATE_LOAN_STATUS_PATH, handler::updateStatus)
                 .build();
     }

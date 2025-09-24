@@ -135,7 +135,7 @@ class RouterRestTest {
     @Test
     void createLoanApplication_shouldReturnCreated_whenValidRequest() {
         webTestClient.post()
-                .uri(ApiConstants.LOAN_APPLICATIONS_PATH)
+                .uri(ApiConstants.BASE_PATH)
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue(request)
@@ -155,7 +155,7 @@ class RouterRestTest {
     @Test
     void createLoanApplication_shouldReturnError_whenBodyEmpty() {
         webTestClient.post()
-                .uri(ApiConstants.LOAN_APPLICATIONS_PATH)
+                .uri(ApiConstants.BASE_PATH)
                 .accept(MediaType.APPLICATION_JSON)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("")
