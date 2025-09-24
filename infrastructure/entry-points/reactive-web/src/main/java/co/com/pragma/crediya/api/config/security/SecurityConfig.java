@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .authorizeExchange(exchangeSpec -> exchangeSpec
                         .pathMatchers(ApiConstants.PUBLIC_PATTERNS)
                         .permitAll()
-                        .pathMatchers(HttpMethod.GET, ApiConstants.LOAN_APPLICATIONS_PATH)
+                        .pathMatchers(HttpMethod.GET, ApiConstants.BASE_PATH)
                         .hasAnyAuthority(
                                 DomainConstants.ADVISOR_ROLE
                         )
@@ -37,7 +37,7 @@ public class SecurityConfig {
                         .hasAnyAuthority(
                                 DomainConstants.ADVISOR_ROLE
                         )
-                        .pathMatchers(HttpMethod.POST, ApiConstants.LOAN_APPLICATIONS_PATH)
+                        .pathMatchers(HttpMethod.POST, ApiConstants.BASE_PATH)
                         .hasAnyAuthority(
                                 DomainConstants.CUSTOMER_ROLE
                         )

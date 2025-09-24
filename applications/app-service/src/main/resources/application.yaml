@@ -14,6 +14,7 @@ server:
 management:
   endpoints:
     web:
+      base-path: "/api/v1/loan-applications/actuator"
       exposure:
         include: "health,prometheus"
   endpoint:
@@ -25,5 +26,7 @@ cors:
   allowed-origins: "${CORS_ALLOWED_ORIGINS}"
 
 springdoc:
+  api-docs:
+    path: "/api/v1/loan-applications/api-docs"
   swagger-ui:
-    path: "/swagger-ui.html"
+    path: "/api/v1/loan-applications/swagger-ui.html"

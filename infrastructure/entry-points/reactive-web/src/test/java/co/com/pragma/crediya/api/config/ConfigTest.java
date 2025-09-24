@@ -91,7 +91,7 @@ class ConfigTest {
     @Test
     void corsConfigurationShouldAllowOrigins() {
         webTestClient.post()
-                .uri(ApiConstants.LOAN_APPLICATIONS_PATH)
+                .uri(ApiConstants.BASE_PATH)
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectHeader().valueEquals("Content-Security-Policy",
